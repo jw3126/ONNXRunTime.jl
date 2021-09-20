@@ -1,5 +1,6 @@
 module ONNXRunTime
 using LazyArtifacts
+using DataStructures: OrderedDict
 
 include("capi.jl")
 
@@ -57,21 +58,66 @@ function load_inference(path::AbstractString; device=:cpu,
     )
 end
 
-function (o::InferenceSession1)(inputs::AbstractDict{<:AbstractString, <: AbstractArray},
-        output_names::AbstractVector{<:AbstractString} = output_names(o),
+function make_input_tensor(o::InferenceSession1, inputs, key)
+    arr = inputs[keytype(inputs)(key)]
+    return CreateTensorWithDataAsOrtValue(o.api, o.meminfo, arr)
+end
+
+function prepare_inputs(o::InferenceSession1, inputs)
+    names = input_names(o)
+    tens = OrtValue[make_input_tensor(o, inputs, key) for key in names]
+    names, tens
+end
+
+keytype(o) = Base.keytype(o)
+keytype(o::NamedTuple) = Symbol
+
+function make_output(o, inputs::NamedTuple, output_names, output_tensors)
+    @argcheck length(output_names) == length(output_tensors)
+    pairs = (Symbol(key) => GetTensorMutableData(o.api, val) for (key, val) in zip(output_names, output_tensors))
+    (;pairs...)
+end
+function make_output(o, inputs::AbstractDict, output_names, output_tensors)
+    @argcheck length(output_names) == length(output_tensors)
+    ret = OrderedDict{keytype(inputs), AbstractArray}()
+    for (key, val) in zip(output_names, output_tensors)
+        ret[key] = GetTensorMutableData(o.api, val)
+    end
+    ret
+end
+function (o::InferenceSession1)(
+        inputs,
+        output_names=output_names(o)
     )
     @argcheck o.device in DEVICES
-    input_tensors = OrtValue[]
-    input_names = String[]
-    for key in sort!(collect(keys(inputs)))
-        input_array  = inputs[key]
-        input_tensor = CreateTensorWithDataAsOrtValue(o.api, o.meminfo, input_array)
-        push!(input_tensors, input_tensor)
-        push!(input_names, string(key))
+    @argcheck eltype(output_names) <: Union{AbstractString, Symbol}
+    @argcheck keytype(inputs) <: Union{AbstractString, Symbol}
+    expected_input_names = ONNXRunTime.input_names(o)
+    for key in keys(inputs)
+        if !(String(key) in expected_input_names)
+            msg = """
+            Invalid input name.
+            Expected: $(expected_input_names)
+            Got: $(key)
+            """
+            throw(ArgumentError(msg))
+        end
     end
+    expected_output_names = ONNXRunTime.output_names(o)
+    for name in output_names
+        if !(String(name) in expected_output_names)
+            msg = """
+            Invalid output name.
+            Expected: $(expected_output_names)
+            Got: $(name)
+            """
+            throw(ArgumentError(msg))
+        end
+    end
+    inp_names, input_tensors = prepare_inputs(o, inputs)
     run_options = CreateRunOptions(o.api)
-    output_tensors = Run(o.api, o.session, run_options, input_names, input_tensors, output_names)
-    Dict((name => GetTensorMutableData(o.api, ten)) for (name, ten) in zip(output_names, output_tensors))
+    output_tensors = Run(o.api, o.session, run_options, inp_names, input_tensors, output_names)
+    make_output(o, inputs, output_names, output_tensors)
 end
 
 end #module

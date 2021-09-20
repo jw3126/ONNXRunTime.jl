@@ -12,11 +12,11 @@ using ONNXRunTime: juliatype
         @test OX.output_names(model) == ["output"]
         input = randn(Float32, 2,3)
         #= this works             =# model(Dict("input" => randn(Float32, 2,3)), ["output"])
-        @test_throws OX.OrtException model(Dict("nonsense" => input), ["output"])
-        @test_throws OX.OrtException model(Dict("input" => input), ["nonsense"])
-        @test_throws OX.OrtException model(Dict("input" => input), String[])
-        @test_throws OX.OrtException model(Dict("input" => input, "unused"=>input), ["output"])
-        @test_throws OX.OrtException model(Dict("input" => input, "unused"=>input), ["output"])
+        @test_throws OX.ArgumentError model(Dict("nonsense" => input), ["output"])
+        @test_throws OX.ArgumentError model(Dict("input" => input), ["nonsense"])
+        @test_throws OX.OrtException  model(Dict("input" => input), String[])
+        @test_throws OX.ArgumentError model(Dict("input" => input, "unused"=>input), ["output"])
+        @test_throws OX.ArgumentError model(Dict("input" => input, "unused"=>input), ["output"])
         @test_throws OX.OrtException model(Dict("input" => randn(Float32, 3,2)), ["output"])
         @test_throws Exception       model(Dict("input" => randn(Int, 2,3)    ), ["output"])
         @test_throws OX.OrtException model(Dict("input" => randn(Float64, 2,3)), ["output"])
@@ -33,6 +33,7 @@ using ONNXRunTime: juliatype
         x = randn(Float32, 1,2,3)
         y = randn(Float32, 1,2,3)
         d = model(Dict("x" => x, "y"=>y))
+        @test d isa AbstractDict
         @test d == Dict("sum" => x+y)
     end
     @testset "diagonal1x2x3x4.onnx" begin
@@ -43,6 +44,19 @@ using ONNXRunTime: juliatype
         x = randn(Float64, 1,2,3,4)
         d = model(Dict("in" => x))
         @test d == Dict("out1" => x, "out2" => x)
+    end
+    @testset "swap_x_.onnx" begin
+        path = OX.testdatapath("swap_x_.onnx")
+        model = OX.load_inference(path)
+        @test OX.input_names(model)  == ["in1", "in2"]
+        @test OX.output_names(model) == ["out1", "out2"]
+        in1 = randn(Float32, 2,3)
+        in2 = randn(Float32, 4,5)
+        res = model((;in1, in2))
+        @test keys(res) === (:out1, :out2)
+        @test res isa NamedTuple
+        @test res.out1 == in2
+        @test res.out2 == in1
     end
 end
 
