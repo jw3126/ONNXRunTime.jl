@@ -16,48 +16,48 @@ using Pkg.Artifacts: @artifact_str
 const LIB_CPU = Ref(C_NULL)
 const LIB_GPU = Ref(C_NULL)
 
-const DEVICES = [:cpu, :gpu]
+const EXECUTION_PROVIDERS = [:cpu, :gpu]
 
-function set_lib!(path::AbstractString, device::Symbol)
+function set_lib!(path::AbstractString, execution_provider::Symbol)
     @argcheck ispath(path)
-    LIB = libref(device)
+    LIB = libref(execution_provider)
     if LIB[] != C_NULL
         dlclose(LIB[])
     end
     LIB[] = dlopen(path)
 end
 
-function make_lib!(device)
-    @argcheck device in DEVICES
-    root = if device === :cpu
+function make_lib!(execution_provider)
+    @argcheck execution_provider in EXECUTION_PROVIDERS
+    root = if execution_provider === :cpu
         artifact"onnxruntime_cpu"
-    elseif device === :gpu
+    elseif execution_provider === :gpu
         artifact"onnxruntime_gpu"
     else
-        error("Unknown device $(repr(device))")
+        error("Unknown execution_provider $(repr(execution_provider))")
     end
     @check isdir(root)
     dir = joinpath(root, only(readdir(root)))
     @check isdir(dir)
     path = joinpath(dir, "lib", "libonnxruntime.so")
-    set_lib!(path, device)
+    set_lib!(path, execution_provider)
 end
 
-function libref(device::Symbol)::Ref
-    @argcheck device in DEVICES
-    if device === :cpu
+function libref(execution_provider::Symbol)::Ref
+    @argcheck execution_provider in EXECUTION_PROVIDERS
+    if execution_provider === :cpu
         LIB_CPU
-    elseif device === :gpu
+    elseif execution_provider === :gpu
         LIB_CPU
     else
-        error("Unreachable $(repr(device))")
+        error("Unreachable $(repr(execution_provider))")
     end
 end
 
-function libptr(device::Symbol)::Ptr
-    ref = libref(device)
+function libptr(execution_provider::Symbol)::Ptr
+    ref = libref(execution_provider)
     if ref[] == C_NULL
-        make_lib!(device)
+        make_lib!(execution_provider)
     end
     return ref[]
 end
@@ -263,9 +263,9 @@ end
 
 const OrtStatusPtr = Ptr{Cvoid}
 
-function OrtGetApiBase(; device = :cpu)
-    @argcheck device in DEVICES
-    f = dlsym(libptr(device), :OrtGetApiBase)
+function OrtGetApiBase(; execution_provider = :cpu)
+    @argcheck execution_provider in EXECUTION_PROVIDERS
+    f = dlsym(libptr(execution_provider), :OrtGetApiBase)
     api_base = unsafe_load(@ccall $f()::Ptr{OrtApiBase})
 end
 function GetVersionString(api_base::OrtApiBase)::String
@@ -280,7 +280,7 @@ end
 """
 Convenience method.
 """
-GetApi(; device = :cpu) = GetApi(OrtGetApiBase(; device))
+GetApi(; execution_provider = :cpu) = GetApi(OrtGetApiBase(; execution_provider))
 
 ################################################################################
 ##### OrtEnv

@@ -4,9 +4,9 @@ using DataStructures: OrderedDict
 
 include("capi.jl")
 
-function create_memory_info(api, device)
-    @argcheck device in DEVICES
-    if device === :cpu
+function create_memory_info(api, execution_provider)
+    @argcheck execution_provider in EXECUTION_PROVIDERS
+    if execution_provider === :cpu
         CreateCpuMemoryInfo(api)
     else
         error("TODO")
@@ -14,7 +14,7 @@ function create_memory_info(api, device)
 end
 struct InferenceSession1
     api::OrtApi
-    device::Symbol
+    execution_provider::Symbol
     #env::OrtEnv
     session::OrtSession
     meminfo::OrtMemoryInfo
@@ -38,21 +38,21 @@ function output_names(api::OrtApi, session::OrtSession, allocater::OrtAllocator)
     end
 end
 
-function load_inference(path::AbstractString; device=:cpu,
+function load_inference(path::AbstractString; execution_provider=:cpu,
         envname="defaultenv",
                        )::InferenceSession1
-    api = GetApi(;device)
+    api = GetApi(;execution_provider)
     env = CreateEnv(api, name=envname)
     so = CreateSessionOptions(api)
     session = CreateSession(api, env, path)
-    meminfo = create_memory_info(api, device)
+    meminfo = create_memory_info(api, execution_provider)
     allocater = CreateAllocator(api, session, meminfo)
     _input_names =input_names(api, session, allocater)
     _output_names=output_names(api, session, allocater)
     # TODO Is aliasing supported by ONNX? It will cause bugs, so lets forbid it.
     @check allunique(_input_names)
     @check allunique(_output_names)
-    return InferenceSession1(api, device, session, meminfo, allocater,
+    return InferenceSession1(api, execution_provider, session, meminfo, allocater,
         _input_names,
         _output_names,
     )
@@ -89,7 +89,7 @@ function (o::InferenceSession1)(
         inputs,
         output_names=output_names(o)
     )
-    @argcheck o.device in DEVICES
+    @argcheck o.execution_provider in EXECUTION_PROVIDERS
     @argcheck eltype(output_names) <: Union{AbstractString, Symbol}
     @argcheck keytype(inputs) <: Union{AbstractString, Symbol}
     expected_input_names = ONNXRunTime.input_names(o)
