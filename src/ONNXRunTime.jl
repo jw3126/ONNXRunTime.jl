@@ -115,7 +115,7 @@ function (o::InferenceSession1)(
         end
     end
     inp_names, input_tensors = prepare_inputs(o, inputs)
-    run_options = CreateRunOptions(o.api)
+    run_options    = nothing
     output_tensors = Run(o.api, o.session, run_options, inp_names, input_tensors, output_names)
     make_output(o, inputs, output_names, output_tensors)
 end
