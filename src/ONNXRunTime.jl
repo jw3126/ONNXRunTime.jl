@@ -1,4 +1,5 @@
 module ONNXRunTime
+using LazyArtifacts
 
 include("capi.jl")
 
