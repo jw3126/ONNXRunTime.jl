@@ -4,37 +4,29 @@ using DataStructures: OrderedDict
 
 include("capi.jl")
 
-function create_memory_info(api, execution_provider)
-    @argcheck execution_provider in EXECUTION_PROVIDERS
-    if execution_provider === :cpu
-        CreateCpuMemoryInfo(api)
-    else
-        error("TODO")
-    end
-end
 struct InferenceSession1
     api::OrtApi
     execution_provider::Symbol
     #env::OrtEnv
     session::OrtSession
     meminfo::OrtMemoryInfo
-    allocater::OrtAllocator
+    allocator::OrtAllocator
     _input_names::Vector{String}
     _output_names::Vector{String}
 end
 input_names(o::InferenceSession1) = o._input_names
 output_names(o::InferenceSession1) = o._output_names
 
-function input_names(api::OrtApi, session::OrtSession, allocater::OrtAllocator)::Vector{String}
+function input_names(api::OrtApi, session::OrtSession, allocator::OrtAllocator)::Vector{String}
     n = SessionGetInputCount(api, session)
     map(0:n-1) do i
-        SessionGetInputName(api, session, Csize_t(i), allocater)
+        SessionGetInputName(api, session, Csize_t(i), allocator)
     end
 end
-function output_names(api::OrtApi, session::OrtSession, allocater::OrtAllocator)::Vector{String}
+function output_names(api::OrtApi, session::OrtSession, allocator::OrtAllocator)::Vector{String}
     n = SessionGetOutputCount(api, session)
     map(0:n-1) do i
-        SessionGetOutputName(api, session, Csize_t(i), allocater)
+        SessionGetOutputName(api, session, Csize_t(i), allocator)
     end
 end
 
@@ -43,23 +35,24 @@ function load_inference(path::AbstractString; execution_provider=:cpu,
                        )::InferenceSession1
     api = GetApi(;execution_provider)
     env = CreateEnv(api, name=envname)
-    session_options = CreateSessionOptions(api)
     if execution_provider === :cpu
-        nothing
+        session_options = CreateSessionOptions(api)
     elseif execution_provider === :cuda
-        SessionOptionsAppendExecutionProvider_CUDA(api, session_options, nothing)
+        session_options = CreateSessionOptions(api)
+        cuda_options = OrtCUDAProviderOptions()
+        SessionOptionsAppendExecutionProvider_CUDA(api, session_options, cuda_options)
     else
         error("Unsupported execution_provider $execution_provider")
     end
     session = CreateSession(api, env, path, session_options)
-    meminfo = create_memory_info(api, execution_provider)
-    allocater = CreateAllocator(api, session, meminfo)
-    _input_names =input_names(api, session, allocater)
-    _output_names=output_names(api, session, allocater)
+    meminfo = CreateCpuMemoryInfo(api)
+    allocator = CreateAllocator(api, session, meminfo)
+    _input_names =input_names(api, session, allocator)
+    _output_names=output_names(api, session, allocator)
     # TODO Is aliasing supported by ONNX? It will cause bugs, so lets forbid it.
     @check allunique(_input_names)
     @check allunique(_output_names)
-    return InferenceSession1(api, execution_provider, session, meminfo, allocater,
+    return InferenceSession1(api, execution_provider, session, meminfo, allocator,
         _input_names,
         _output_names,
     )

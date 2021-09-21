@@ -313,7 +313,7 @@ for item in [
     (name=:PrepackedWeightsContainer , release=true),
     (name=:Allocator                 , release=true),
     (name=:ArenaCfg                  , release=true),
-    (name=:CUDAProviderOptions       , release=false),
+    #(name=:CUDAProviderOptions       , release=false),
 ]
     Obj = item.name
     OrtObj = Symbol(:Ort, Obj)
@@ -671,11 +671,6 @@ function GetTensorTypeAndShape(api::OrtApi, o::OrtValue)::OrtTensorTypeAndShapeI
     into_julia(OrtTensorTypeAndShapeInfo, api, p_ptr, status, gchandles)
 end
 
-"""
-
-This operation is unsafe, because the return value points to memory owned by `data`.
-If `data` is garbage collected, the return value becomes invalid.
-"""
 function CreateTensorWithDataAsOrtValue(
     api::OrtApi,
     memory_info::OrtMemoryInfo,
@@ -836,17 +831,51 @@ function CreateArenaCfgV2(api::OrtApi, keys, vals)::OrtArenaCfg
     into_julia(OrtArenaCfg, api, p_ptr, status, gchandles)
 end
 
+@cenum OrtCudnnConvAlgoSearch::UInt32 begin
+    EXHAUSTIVE = 0
+    HEURISTIC = 1
+    DEFAULT = 2
+end
+
+struct OrtCUDAProviderOptions
+    device_id::Cint
+    cudnn_conv_algo_search::OrtCudnnConvAlgoSearch
+    gpu_mem_limit::Csize_t
+    arena_extend_strategy::Cint
+    do_copy_in_default_stream::Cint
+    has_user_compute_stream::Cint
+    user_compute_stream::Ptr{Cvoid}
+    default_memory_arena_cfg::Ptr{Cvoid} # Ptr{OrtArenaCfg}
+end
+function OrtCUDAProviderOptions(;
+        device_id                 = 0,
+        cudnn_conv_algo_search    = EXHAUSTIVE,
+        gpu_mem_limit             = typemax(Csize_t),
+        arena_extend_strategy     = 0,
+        do_copy_in_default_stream = false,
+        has_user_compute_stream   = false,
+        user_compute_stream       = C_NULL,
+        default_memory_arena_cfg  = C_NULL,
+    )
+    OrtCUDAProviderOptions(
+        device_id                 ,
+        cudnn_conv_algo_search    ,
+        gpu_mem_limit             ,
+        arena_extend_strategy     ,
+        do_copy_in_default_stream ,
+        has_user_compute_stream   ,
+        user_compute_stream       ,
+        default_memory_arena_cfg  ,
+   )
+end
+
 function SessionOptionsAppendExecutionProvider_CUDA(
     api::OrtApi,
     session_options::OrtSessionOptions,
-    cuda_options::Union{OrtCUDAProviderOptions,Nothing},
+    cuda_options::OrtCUDAProviderOptions,
 )
-    cuda_options_ptr = if cuda_options === nothing
-        C_NULL
-    else
-        cuda_options.ptr
-    end
-    GC.@preserve cuda_options session_options begin
+    cuda_options_ptr = Ref(cuda_options)
+    GC.@preserve cuda_options_ptr session_options begin
         status = @ccall $(api.SessionOptionsAppendExecutionProvider_CUDA)(
                 session_options.ptr::Ptr{Cvoid},
                 cuda_options_ptr::Ptr{Cvoid},
@@ -867,6 +896,8 @@ end
 ################################################################################
 export OrtApiBase, GetApi, GetVersionString
 export OrtApi
+export OrtCUDAProviderOptions
+export OrtCudnnConvAlgoSearch
 export ONNXTensorElementDataType
 export release
 for f in fieldnames(OrtApi)
