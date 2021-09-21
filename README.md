@@ -14,11 +14,11 @@ Contributions are welcome.
 The high level API works as follows:
 ```julia
 
-julia> using ONNXRunTime
+julia> import ONNXRunTime as OX
 
-julia> path = ONNXRunTime.testdatapath("increment2x3.onnx"); # path to a toy model
+julia> path = OX.testdatapath("increment2x3.onnx"); # path to a toy model
 
-julia> model = ONNXRunTime.load_inference(path);
+julia> model = OX.load_inference(path);
 
 julia> input = Dict("input" => randn(Float32,2,3))
 Dict{String, Matrix{Float32}} with 1 entry:
@@ -27,6 +27,14 @@ Dict{String, Matrix{Float32}} with 1 entry:
 julia> model(input)
 Dict{String, Matrix{Float32}} with 1 entry:
   "output" => [2.68127 2.18192 0.525979; -0.135185 2.02199 3.75168]
+```
+For GPU usage simply do:
+```julia
+pkg> add CUDA
+
+julia> import CUDA
+
+julia> OX.load_inference(path, execution_provider=:cuda)
 ```
 
 The low level API mirrors the offical [C-API](https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347). The above example looks like this:

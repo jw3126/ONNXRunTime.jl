@@ -47,6 +47,11 @@ function load_inference(path::AbstractString; execution_provider=:cpu,
     if execution_provider === :cpu
         session_options = CreateSessionOptions(api)
     elseif execution_provider === :cuda
+        if !(isdefined(@__MODULE__, :CUDA))
+            @warn """
+            The $(repr(execution_provider)) requires the CUDA.jl package to be available. Try adding `import CUDA` to your code.
+            """
+        end
         session_options = CreateSessionOptions(api)
         cuda_options = OrtCUDAProviderOptions()
         SessionOptionsAppendExecutionProvider_CUDA(api, session_options, cuda_options)
