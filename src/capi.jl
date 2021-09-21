@@ -13,10 +13,10 @@ using CEnum: @cenum
 using ArgCheck
 using Pkg.Artifacts: @artifact_str
 
-const LIB_CPU = Ref(C_NULL)
-const LIB_GPU = Ref(C_NULL)
+const LIB_CPU  = Ref(C_NULL)
+const LIB_CUDA = Ref(C_NULL)
 
-const EXECUTION_PROVIDERS = [:cpu, :gpu]
+const EXECUTION_PROVIDERS = [:cpu, :cuda]
 
 function set_lib!(path::AbstractString, execution_provider::Symbol)
     @argcheck ispath(path)
@@ -31,7 +31,7 @@ function make_lib!(execution_provider)
     @argcheck execution_provider in EXECUTION_PROVIDERS
     root = if execution_provider === :cpu
         artifact"onnxruntime_cpu"
-    elseif execution_provider === :gpu
+    elseif execution_provider === :cuda
         artifact"onnxruntime_gpu"
     else
         error("Unknown execution_provider $(repr(execution_provider))")
@@ -39,7 +39,14 @@ function make_lib!(execution_provider)
     @check isdir(root)
     dir = joinpath(root, only(readdir(root)))
     @check isdir(dir)
-    path = joinpath(dir, "lib", "libonnxruntime.so")
+    ext = if Sys.iswindows()
+        ".dll"
+    elseif Sys.isapple()
+        ".dylib"
+    else
+        ".so"
+    end
+    path = joinpath(dir, "lib", "libonnxruntime" * ext)
     set_lib!(path, execution_provider)
 end
 
@@ -47,8 +54,8 @@ function libref(execution_provider::Symbol)::Ref
     @argcheck execution_provider in EXECUTION_PROVIDERS
     if execution_provider === :cpu
         LIB_CPU
-    elseif execution_provider === :gpu
-        LIB_CPU
+    elseif execution_provider === :cuda
+        LIB_CUDA
     else
         error("Unreachable $(repr(execution_provider))")
     end
@@ -303,7 +310,6 @@ for item in [
     (name=:ModelMetadata             , release=true),
     #(name=:ThreadPoolParams          , release=true),
     (name=:ThreadingOptions          , release=true),
-    (name=:ArenaCfg                  , release=true),
     (name=:PrepackedWeightsContainer , release=true),
     (name=:Allocator                 , release=true),
     (name=:ArenaCfg                  , release=true),
@@ -415,7 +421,7 @@ function CreateSession(
     api::OrtApi,
     env::OrtEnv,
     path::AbstractString,
-    options::OrtSessionOptions = CreateSessionOptions(api),
+    options::OrtSessionOptions,
 )::OrtSession
     @argcheck ispath(path)
     p_ptr = Ref(C_NULL)
@@ -835,7 +841,7 @@ function SessionOptionsAppendExecutionProvider_CUDA(
     session_options::OrtSessionOptions,
     cuda_options::Union{OrtCUDAProviderOptions,Nothing},
 )
-    cpo_ptr = if cuda_options === nothing
+    cuda_options_ptr = if cuda_options === nothing
         C_NULL
     else
         cuda_options.ptr
@@ -843,9 +849,9 @@ function SessionOptionsAppendExecutionProvider_CUDA(
     GC.@preserve cuda_options session_options begin
         status = @ccall $(api.SessionOptionsAppendExecutionProvider_CUDA)(
                 session_options.ptr::Ptr{Cvoid},
-                cpo_ptr::Ptr{Cvoid},
+                cuda_options_ptr::Ptr{Cvoid},
             )::OrtStatusPtr
-        discharge_status_ptr(api, status)
+        check_and_release(api, status)
     end
 end
 

@@ -43,8 +43,15 @@ function load_inference(path::AbstractString; execution_provider=:cpu,
                        )::InferenceSession1
     api = GetApi(;execution_provider)
     env = CreateEnv(api, name=envname)
-    so = CreateSessionOptions(api)
-    session = CreateSession(api, env, path)
+    session_options = CreateSessionOptions(api)
+    if execution_provider === :cpu
+        nothing
+    elseif execution_provider === :cuda
+        SessionOptionsAppendExecutionProvider_CUDA(api, session_options, nothing)
+    else
+        error("Unsupported execution_provider $execution_provider")
+    end
+    session = CreateSession(api, env, path, session_options)
     meminfo = create_memory_info(api, execution_provider)
     allocater = CreateAllocator(api, session, meminfo)
     _input_names =input_names(api, session, allocater)

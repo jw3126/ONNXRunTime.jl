@@ -7,7 +7,7 @@ using ONNXRunTime: juliatype
 @testset "high level" begin
     @testset "increment2x3.onnx" begin
         path = OX.testdatapath("increment2x3.onnx")
-        model = OX.load_inference(path)
+        model = OX.load_inference(path, execution_provider=:cpu)
         @test OX.input_names(model) == ["input"]
         @test OX.output_names(model) == ["output"]
         input = randn(Float32, 2,3)
@@ -82,11 +82,11 @@ end
 @testset "Session" begin
     api = GetApi()
     env = CreateEnv(api, name="myenv")
-    so = CreateSessionOptions(api)
-    @test_throws Exception CreateSession(api, env, "does_not_exits.onnx")
     @testset "increment2x3" begin
         path = ONNXRunTime.testdatapath("increment2x3.onnx")
-        session = CreateSession(api, env, path)
+        session_options = CreateSessionOptions(api)
+        @test_throws Exception CreateSession(api, env, "does_not_exits.onnx", session_options)
+        session = CreateSession(api, env, path, session_options)
         @test SessionGetInputCount(api, session) == 1
         @test SessionGetOutputCount(api, session) == 1
         mem = CreateCpuMemoryInfo(api)
