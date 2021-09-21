@@ -1,12 +1,10 @@
-# Useful documentation:
- # * API reference:https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347
-# * C usage Example: https://github.com/microsoft/onnxruntime-inference-examples/blob/d031f879c9a8d33c8b7dc52c5bc65fe8b9e3960d/c_cxx/fns_candy_style_transfer/fns_candy_style_transfer.c
+"""
+module CAPI
 
-# TODO
-#
-# * Add GC.@preserve in more places
-# * We assume that OrtApi is never deleted? Is that true?
-# * Should we provide a default const OrtApi for convenience?
+This module closely follows the offical onnxruntime [C-API](https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347).
+See [here](https://github.com/microsoft/onnxruntime-inference-examples/blob/d031f879c9a8d33c8b7dc52c5bc65fe8b9e3960d/c_cxx/fns_candy_style_transfer/fns_candy_style_transfer.c) for a C code example.
+"""
+module CAPI
 
 using Libdl
 using CEnum: @cenum
@@ -885,13 +883,6 @@ function SessionOptionsAppendExecutionProvider_CUDA(
 end
 
 ################################################################################
-##### testdatapath
-################################################################################
-function testdatapath(args...)
-    joinpath(@__DIR__, "..", "test", "data", args...)
-end
-
-################################################################################
 ##### exports
 ################################################################################
 export OrtApiBase, GetApi, GetVersionString
@@ -905,3 +896,7 @@ for f in fieldnames(OrtApi)
         @eval export $f
     end
 end
+
+export OrtException
+
+end#module

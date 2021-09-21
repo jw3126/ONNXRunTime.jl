@@ -31,7 +31,7 @@ Dict{String, Matrix{Float32}} with 1 entry:
 
 The low level API mirrors the offical [C-API](https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347). The above example looks like this:
 ```julia
-using ONNXRunTime
+using ONNXRunTime.CAPI
 
 api = GetApi()
 env = CreateEnv(api, name="myenv")
