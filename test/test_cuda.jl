@@ -1,33 +1,12 @@
 module TestCUDA
-using Revise
+import CUDA
 using Test
 using ONNXRunTime
 const OX = ONNXRunTime
 using ONNXRunTime: SessionOptionsAppendExecutionProvider_CUDA
-import CUDA
-CUDA.libcufft()
-CUDA.libcublas()
-CUDA.libcudnn()
-CUDA.libcurand()
 
-
-using Libdl
-if true
-    srcdir="/home/jan/.julia/artifacts/e2fd6cdf04b830a1d802fb35a6193788d0a3811a/lib"
-    for lib in [
-        #"libcudart.so.11.0",
-        #"libcublas.so.11",
-        #"libcurand.so.10",
-        #"libcufft.so.10",
-        #"libcublasLt.so.11",
-        ]
-        dlopen(joinpath(srcdir, lib))
-    end
-
-    #dlopen("/home/jan/.julia/artifacts/dae25a911ac69ce10cd08c18b70b253997830267/lib/libcudnn.so.8")
-    #dlopen("/home/jan/.julia/artifacts/b2cd5f61ce1f9cf00cb94000f20d99b125140255/lib/libcudnn_ops_infer.so.8")
-end
-
+#using Libdl
+#Libdl.dlopen("/home/jan/.julia/artifacts/e2fd6cdf04b830a1d802fb35a6193788d0a3811a/lib/libcudart.so.11.0")
 
 @testset "CUDA high level" begin
     @testset "increment2x3.onnx" begin
@@ -41,6 +20,7 @@ end
     end
 end
 
+using ONNXRunTime.CAPI
 @testset "CUDA low level" begin
     api = GetApi(execution_provider=:cuda)
     env = CreateEnv(api, name="myenv")
