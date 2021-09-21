@@ -51,4 +51,6 @@ output_array = GetTensorMutableData(api, output_tensor)
 ```
 
 # Alternatives
-* Use the onnxruntime python bindings via [PyCall.jl](https://github.com/JuliaPy/PyCall.jl). I experienced problems garbage collection with this approach however.
+* Use the onnxruntime python bindings via [PyCall.jl](https://github.com/JuliaPy/PyCall.jl).
+* [ONNX.jl](https://github.com/FluxML/ONNX.jl)
+* [ONNXNaiveNASflux.jl](https://github.com/DrChainsaw/ONNXNaiveNASflux.jl)
