@@ -23,4 +23,5 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/jw3126/ONNXRunTime.jl",
+    devbranch = "main",
 )
