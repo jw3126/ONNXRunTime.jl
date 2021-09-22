@@ -1,6 +1,7 @@
 using ArgCheck
 using LazyArtifacts
 using DataStructures: OrderedDict
+using DocStringExtensions
 ################################################################################
 ##### testdatapath
 ################################################################################
@@ -13,6 +14,11 @@ using .CAPI
 using .CAPI: juliatype, EXECUTION_PROVIDERS
 export InferenceSession, load_inference
 
+"""
+    $TYPEDEF
+
+Represents an infernence session. Should only be created by calling [`load_inference`](@ref).
+"""
 struct InferenceSession
     api::OrtApi
     execution_provider::Symbol
@@ -39,8 +45,11 @@ function output_names(api::OrtApi, session::OrtSession, allocator::OrtAllocator)
     end
 end
 
-function load_inference(path::AbstractString; execution_provider=:cpu,
-        envname="defaultenv",
+"""
+    $TYPEDSIGNATURES
+"""
+function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
+        envname::AbstractString="defaultenv",
                        )::InferenceSession
     api = GetApi(;execution_provider)
     env = CreateEnv(api, name=envname)
@@ -99,6 +108,10 @@ function make_output(o, inputs::AbstractDict, output_names, output_tensors)
     end
     ret
 end
+
+"""
+    $TYPEDSIGNATURES
+"""
 function (o::InferenceSession)(
         inputs,
         output_names=output_names(o)
