@@ -1,6 +1,7 @@
 module ONNXRunTime
 using Requires:@require
 
+include("carray.jl")
 include("capi.jl")
 include("highlevel.jl")
 

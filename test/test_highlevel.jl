@@ -59,6 +59,20 @@ using ONNXRunTime: juliatype
         @test res.out1 == in2
         @test res.out2 == in1
     end
+    @testset "getindex_12.onnx" begin
+        path = OX.testdatapath("getindex_12.onnx")
+        model = OX.load_inference(path)
+        inputs = (input=collect(reshape(1f0:20, 4,5)),)
+        out = model(inputs).output
+        @test inputs.input[2,3] == only(out)
+    end
+    @testset "copy2d.onnx" begin
+        path = OX.testdatapath("copy2d.onnx")
+        model = OX.load_inference(path)
+        inputs = (input=randn(Float32,3,4),)
+        out = model(inputs).output
+        @test inputs.input == out
+    end
 end
 
 

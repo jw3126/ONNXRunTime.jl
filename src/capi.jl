@@ -5,6 +5,7 @@ This module closely follows the offical onnxruntime [C-API](https://github.com/m
 See [here](https://github.com/microsoft/onnxruntime-inference-examples/blob/d031f879c9a8d33c8b7dc52c5bc65fe8b9e3960d/c_cxx/fns_candy_style_transfer/fns_candy_style_transfer.c) for a C code example.
 """
 module CAPI
+using ONNXRunTime: CArray, unsafe_cwrap
 
 using DocStringExtensions
 using Libdl
@@ -771,14 +772,18 @@ end
 
 """
     $TYPEDSIGNATURES
+
+Return a tensor with shape `shape` that is backed by the memory of `data`.
 """
 function CreateTensorWithDataAsOrtValue(
     api::OrtApi,
     memory_info::OrtMemoryInfo,
-    data::Array,
+    data::Vector,
+    shape
 )::OrtValue
 
-    shapevec = collect(Int64, size(data))
+    @argcheck length(data) == prod(shape)
+    shapevec = collect(Int64, shape)
     onnx_elty = ONNXTensorElementDataType(eltype(data))
 
     p_ptr = Ref(C_NULL)
@@ -816,8 +821,9 @@ end
     $TYPEDSIGNATURES
 
 This function is unsafe, because its output points to memory owned by `tensor`.
+After `tensor` is released, accessing the output becomes undefined behaviour.
 """
-function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)::Array
+function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)::CArray
     p_ptr = Ref(C_NULL)
     GC.@preserve tensor begin
         status = @ccall $(api.GetTensorMutableData)(
@@ -832,13 +838,13 @@ function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)::Array
     shape = Tuple(GetDimensions(api, info))
     ptrT = Ptr{T}(p_ptr[])
     @check tensor.isalive
-    return unsafe_wrap(Array, ptrT, shape, own = false)
+    return unsafe_cwrap(ptrT, shape, own = false)
 end
 
 """
     $TYPEDSIGNATURES
 """
-function GetTensorMutableData!(out::AbstractArray, api::OrtApi, tensor::OrtValue)
+function GetTensorMutableData!(out::AbstractArray, api::OrtApi, tensor::OrtValue)::typeof(out)
     GC.@preserve tensor begin
         data_owned_by_tensor = unsafe_GetTensorMutableData(api, tensor)
         copy!(out, data_owned_by_tensor)
@@ -848,6 +854,8 @@ end
 
 """
     $TYPEDSIGNATURES
+
+This function converts the tensor to fortran layout.
 """
 function GetTensorMutableData(api::OrtApi, tensor::OrtValue)::Array
     GC.@preserve tensor begin

@@ -19,8 +19,12 @@ import ONNXRunTime as OX
         @test_throws OX.OrtException SessionGetInputName(api, session, 1, allocator)
         @test SessionGetOutputName(api, session, 0, allocator) == "output"
         @test_throws OX.OrtException SessionGetOutputName(api, session, 1, allocator)
-        input_array = randn(Float32, 2,3)
-        input_tensor = CreateTensorWithDataAsOrtValue(api, mem, input_array)
+        input_vec = randn(Float32, 6)
+        input_array = [
+            input_vec[1] input_vec[2] input_vec[3];
+            input_vec[4] input_vec[5] input_vec[6];
+        ]
+        input_tensor = CreateTensorWithDataAsOrtValue(api, mem, input_vec, (2,3))
         run_options = CreateRunOptions(api)
         input_names = ["input"]
         output_names = ["output"]
@@ -39,8 +43,8 @@ end
 @testset "tensor roundtrip" begin
     api = GetApi()
     mem = CreateCpuMemoryInfo(api)
-    data = randn(2,3)
-    tensor = CreateTensorWithDataAsOrtValue(api, mem, data)
+    data = OX.CArray(randn(2,3))
+    tensor = CreateTensorWithDataAsOrtValue(api, mem, parent(data), size(data))
     @test IsTensor(api, tensor)
     info = GetTensorTypeAndShape(api, tensor)
     onnxelty = GetTensorElementType(api, info)

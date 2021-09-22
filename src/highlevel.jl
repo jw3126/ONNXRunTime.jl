@@ -83,7 +83,8 @@ end
 
 function make_input_tensor(o::InferenceSession, inputs, key)
     arr = inputs[keytype(inputs)(key)]
-    return CreateTensorWithDataAsOrtValue(o.api, o.meminfo, arr)
+    carr = CArray(arr)
+    return CreateTensorWithDataAsOrtValue(o.api, o.meminfo, parent(carr), size(carr))
 end
 
 function prepare_inputs(o::InferenceSession, inputs)
