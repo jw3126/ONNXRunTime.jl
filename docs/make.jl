@@ -3,6 +3,8 @@ using Documenter
 
 DocMeta.setdocmeta!(ONNXRunTime, :DocTestSetup, :(using ONNXRunTime); recursive=true)
 
+cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"), force=true)
+
 makedocs(;
     modules=[ONNXRunTime],
     authors="Jan Weidner <jw3126@gmail.com> and contributors",
@@ -15,6 +17,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "API" => "api.md",
     ],
 )
 

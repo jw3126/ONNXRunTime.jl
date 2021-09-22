@@ -298,9 +298,6 @@ function GetApi(api_base::OrtApiBase, ort_api_version::Integer = ORT_API_VERSION
     ptr = @ccall $(api_base.GetApi)(ort_api_version::UInt32)::Ptr{OrtApi}
     unsafe_load(ptr)
 end
-"""
-Convenience method.
-"""
 GetApi(; execution_provider = :cpu) = GetApi(OrtGetApiBase(; execution_provider))
 
 ################################################################################
@@ -335,7 +332,8 @@ for item in [
     @eval begin
         """
             $(string($OrtObj))
-        Wraps a pointer to
+
+        Wraps a pointer to the C object of type $(string($OrtObj)).
         """
         mutable struct $OrtObj
             ptr::Ptr{Cvoid}
@@ -815,6 +813,8 @@ function CreateTensorWithDataAsOrtValue(
 end
 
 """
+    $TYPEDSIGNATURES
+
 This function is unsafe, because its output points to memory owned by `tensor`.
 """
 function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)::Array
@@ -834,6 +834,10 @@ function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)::Array
     @check tensor.isalive
     return unsafe_wrap(Array, ptrT, shape, own = false)
 end
+
+"""
+    $TYPEDSIGNATURES
+"""
 function GetTensorMutableData!(out::AbstractArray, api::OrtApi, tensor::OrtValue)
     GC.@preserve tensor begin
         data_owned_by_tensor = unsafe_GetTensorMutableData(api, tensor)
