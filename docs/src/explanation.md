@@ -4,7 +4,7 @@
 
 onnxruntime expects tensors in with memory in C-layout. The julia `Array` type is in Fortran-layout however.
 The high level api automagically handles the layout conversions between julia and onnxruntime.
-In the low level api conversions are only done if explicitly documented.
+In the low level api the programmer is responsible to do the conversions.
 
 For instance consider the "copy2d.onnx", which just returns a copy of its input:
 ```julia

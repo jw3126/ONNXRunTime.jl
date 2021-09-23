@@ -52,7 +52,7 @@ using ONNXRunTime.CAPI
     output_tensor = first(outputs)
     @test output_tensor isa OrtValue
     output_array = GetTensorMutableData(api, output_tensor)
-    @test typeof(output_array) == Matrix{Float32}
+    @test typeof(output_array) <: AbstractMatrix{Float32}
     @test size(output_array) == (2,3)
     @test output_array ≈ 1 .+ input_array
 end

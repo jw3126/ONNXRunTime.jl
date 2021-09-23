@@ -14,7 +14,6 @@ function reversedims_lazy(arr)
     PermutedDimsArray(arr, _perm(arr))
 end
 
-include("carray.jl")
 include("capi.jl")
 include("highlevel.jl")
 

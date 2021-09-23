@@ -34,7 +34,7 @@ import ONNXRunTime as OX
         output_tensor = first(outputs)
         @test output_tensor isa OrtValue
         output_array = GetTensorMutableData(api, output_tensor)
-        @test typeof(output_array) == Matrix{Float32}
+        @test typeof(output_array) <: AbstractMatrix{Float32}
         @test size(output_array) == (2,3)
         @test output_array ≈ 1 .+ input_array
     end
@@ -43,8 +43,8 @@ end
 @testset "tensor roundtrip" begin
     api = GetApi()
     mem = CreateCpuMemoryInfo(api)
-    data = OX.CArray(randn(2,3))
-    tensor = CreateTensorWithDataAsOrtValue(api, mem, parent(data), size(data))
+    data = randn(2,3)
+    tensor = CreateTensorWithDataAsOrtValue(api, mem, vec(OX.reversedims(data)), size(data))
     @test IsTensor(api, tensor)
     info = GetTensorTypeAndShape(api, tensor)
     onnxelty = GetTensorElementType(api, info)

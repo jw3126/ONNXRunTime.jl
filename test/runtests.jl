@@ -1,4 +1,3 @@
-include("test_carray.jl")
 include("test_highlevel.jl")
 include("test_capi.jl")
 

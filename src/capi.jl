@@ -847,9 +847,8 @@ end
 """
     $TYPEDSIGNATURES
 
-This function converts the tensor to fortran layout.
 """
-@timeit TIMER function GetTensorMutableData(api::OrtApi, tensor::OrtValue)::Array
+@timeit TIMER function GetTensorMutableData(api::OrtApi, tensor::OrtValue)::AbstractArray
     GC.@preserve tensor begin
         @timeit TIMER "unsafe_GetTensorMutableData" begin
             data_owned_by_tensor::PermutedDimsArray = unsafe_GetTensorMutableData(api, tensor)
