@@ -83,6 +83,22 @@ using ONNXRunTime: juliatype
         out = model(inputs).output
         @test out ≈ inputs.input1 * inputs.input2
     end
+    @testset "xyz_3x4x5.onnx" begin
+        path = OX.testdatapath("xyz_3x4x5.onnx")
+        model = OX.load_inference(path)
+        inputs = (input=randn(Float32,4,10),)
+        out = model(inputs)
+        @test out.identity == inputs.input
+        @test size(out.X) == size(out.Y) == size(out.Z) == (3,4,5)
+        for _ in 1:20
+            ix = rand(axes(out.X,1))
+            iy = rand(axes(out.X,1))
+            iz = rand(axes(out.X,1))
+            @test out.X[ix,iy,iz] == ix-1
+            @test out.Y[ix,iy,iz] == iy-1
+            @test out.Z[ix,iy,iz] == iz-1
+        end
+    end
 end
 
 
