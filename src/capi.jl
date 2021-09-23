@@ -18,6 +18,15 @@ const LIB_CUDA = Ref(C_NULL)
 
 const EXECUTION_PROVIDERS = [:cpu, :cuda]
 
+function docstring_cenum(T::Type)
+    lines = ["    $(T)"]
+    push!(lines, "CEnum with possible values:")
+    for s in instances(T)
+        push!(lines, "* $s")
+    end
+    join(lines, "\n")
+end
+
 function set_lib!(path::AbstractString, execution_provider::Symbol)
     @argcheck ispath(path)
     LIB = libref(execution_provider)
@@ -397,9 +406,6 @@ function into_julia(
     return ret
 end
 
-"""
-    $TYPEDEF
-"""
 @cenum OrtLoggingLevel::UInt32 begin
     ORT_LOGGING_LEVEL_VERBOSE = 0
     ORT_LOGGING_LEVEL_INFO = 1
@@ -407,6 +413,7 @@ end
     ORT_LOGGING_LEVEL_ERROR = 3
     ORT_LOGGING_LEVEL_FATAL = 4
 end
+@doc docstring_cenum(OrtLoggingLevel) OrtLoggingLevel
 
 
 """
@@ -599,24 +606,20 @@ end
 ##### OrtMemoryInfo
 ################################################################################
 
-"""
-    $TYPEDEF
-"""
 @cenum OrtAllocatorType::Int32 begin
     Invalid = -1
     OrtDeviceAllocator = 0
     OrtArenaAllocator = 1
 end
+@doc docstring_cenum(OrtAllocatorType) OrtAllocatorType
 
-"""
-    $TYPEDEF
-"""
 @cenum OrtMemType::Int32 begin
     OrtMemTypeCPUInput = -2
     OrtMemTypeCPUOutput = -1
     OrtMemTypeCPU = -1
     OrtMemTypeDefault = 0
 end
+@doc docstring_cenum(OrtMemType) OrtMemType
 
 """
     $TYPEDSIGNATURES
@@ -637,9 +640,6 @@ function CreateCpuMemoryInfo(
     into_julia(OrtMemoryInfo, api, p_ptr, status, gchandles)
 end
 
-"""
-    $TYPEDEF
-"""
 @cenum ONNXTensorElementDataType::UInt32 begin
     ONNX_TENSOR_ELEMENT_DATA_TYPE_UNDEFINED = 0
     ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT = 1
@@ -659,6 +659,7 @@ end
     ONNX_TENSOR_ELEMENT_DATA_TYPE_COMPLEX128 = 15
     ONNX_TENSOR_ELEMENT_DATA_TYPE_BFLOAT16 = 16
 end
+@doc docstring_cenum(ONNXTensorElementDataType) ONNXTensorElementDataType
 
 const JULIA_TYPE_FROM_ONNX = Dict{ONNXTensorElementDataType,Type}()
 """
@@ -959,14 +960,12 @@ function CreateArenaCfgV2(api::OrtApi, keys, vals)::OrtArenaCfg
     into_julia(OrtArenaCfg, api, p_ptr, status, gchandles)
 end
 
-"""
-    $TYPEDEF
-"""
 @cenum OrtCudnnConvAlgoSearch::UInt32 begin
     EXHAUSTIVE = 0
     HEURISTIC = 1
     DEFAULT = 2
 end
+@doc docstring_cenum(OrtCudnnConvAlgoSearch) OrtCudnnConvAlgoSearch
 
 """
     $TYPEDEF
