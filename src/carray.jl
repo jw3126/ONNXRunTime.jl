@@ -1,5 +1,6 @@
 using ArgCheck
 using DocStringExtensions
+using TimerOutputs: @timeit
 
 """
     $TYPEDEF
@@ -43,15 +44,19 @@ Base.pointer(o::CArray) = Base.pointer(parent(o))
 
 Base.size(o::CArray) = o.size
 Base.IndexStyle(::Type{<:CArray}) = Base.IndexCartesian()
-
+Base.@propagate_inbounds function Base.getindex(o::CArray{<:Any, N}, I::CartesianIndex{N}) where{N}
+    inds = Tuple(I)
+    i = linearindex_C(size(o), inds)
+    o._data[i]
+end
 Base.@propagate_inbounds function linearindex_C(dims::NTuple{N,Int}, inds::NTuple{N,Int})::Int where {N}
     rinds = reverse(inds)
     LinearIndices(reverse(dims))[rinds...]
 end
 
 Base.@propagate_inbounds function Base.getindex(o::CArray{<:Any}, inds::Integer...) where {N}
-    i = linearindex_C(size(o), inds)
-    o._data[i]
+    I = CartesianIndex(inds)
+    o[I]
 end
 Base.@propagate_inbounds function Base.setindex!(o::CArray{<:Any}, val, inds::Integer...) where {N}
     i = linearindex_C(size(o), inds)
@@ -79,15 +84,35 @@ end
 Construct a `CArray` from `arr`. Under the hood, this copies each element of `arr`
 to a C layout memory region.
 """
-function CArray(arr::AbstractArray)
+@timeit TIMER function CArray(arr::AbstractArray)
     @assert layout(arr) == :fortran
     Base.require_one_based_indexing(arr)
     dims = size(arr)
     T = eltype(arr)
     v = Vector{T}(undef, length(arr))
-    for I in CartesianIndices(arr)
-        i = linearindex_C(dims, Tuple(I))
-        v[i] = arr[I]
+    @timeit TIMER "loop"  begin
+        for I in CartesianIndices(arr)
+            i = linearindex_C(dims, Tuple(I))
+            v[i] = arr[I]
+        end
     end
     CArray(v, dims)
+end
+
+@timeit TIMER function collect_CArray(arr::CArray)
+    out = similar(arr)
+    for I in CartesianIndices(arr)
+        out[I] = arr[I]
+    end
+    out
+end
+
+function reversedims(arr::AbstractArray{T,N}) where {N,T}
+    rev = ntuple(i->N+1-i, Val(N))
+    permutedims(arr, rev)
+end
+
+Base.collect(arr::CArray{<:Any,0}) = fill(only(arr._data))
+function Base.collect(arr::CArray)
+    reversedims(reshape(arr._data, reverse(size(arr))))
 end

@@ -2,6 +2,7 @@ using ArgCheck
 using LazyArtifacts
 using DataStructures: OrderedDict
 using DocStringExtensions
+using TimerOutputs: @timeit, TimerOutput
 ################################################################################
 ##### testdatapath
 ################################################################################
@@ -28,6 +29,7 @@ struct InferenceSession
     allocator::OrtAllocator
     _input_names::Vector{String}
     _output_names::Vector{String}
+    timer::TimerOutput
 end
 input_names(o::InferenceSession) = o._input_names
 output_names(o::InferenceSession) = o._output_names
@@ -49,7 +51,7 @@ end
     $TYPEDSIGNATURES
 """
 function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
-        envname::AbstractString="defaultenv",
+            envname::AbstractString="defaultenv", timer=TIMER,
                        )::InferenceSession
     api = GetApi(;execution_provider)
     env = CreateEnv(api, name=envname)
@@ -78,13 +80,16 @@ function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
     return InferenceSession(api, execution_provider, session, meminfo, allocator,
         _input_names,
         _output_names,
+        timer,
     )
 end
 
-function make_input_tensor(o::InferenceSession, inputs, key)
+@timeit o.timer function make_input_tensor(o::InferenceSession, inputs, key)
     arr = inputs[keytype(inputs)(key)]
-    carr = CArray(arr)
-    return CreateTensorWithDataAsOrtValue(o.api, o.meminfo, parent(carr), size(carr))
+    @timeit o.timer "clayout" begin
+        cstorage = vec(reversedims(arr)::Array)
+    end
+    CreateTensorWithDataAsOrtValue(o.api, o.meminfo, cstorage, size(arr))
 end
 
 function prepare_inputs(o::InferenceSession, inputs)
@@ -98,6 +103,10 @@ keytype(o::NamedTuple) = Symbol
 
 function make_output(o, inputs::NamedTuple, output_names, output_tensors)
     @argcheck length(output_names) == length(output_tensors)
+    # TODO
+    # we can probably optimize this
+    # use unsafe_GetTensorMutableData and afterwards set `val.isalive = false` and
+    # `empty!(gchandles)`
     pairs = (Symbol(key) => GetTensorMutableData(o.api, val) for (key, val) in zip(output_names, output_tensors))
     (;pairs...)
 end
@@ -119,35 +128,45 @@ In this case only the outputs whose name is contained in `output_names` are comp
 """
 function (o::InferenceSession)(
         inputs,
-        output_names=output_names(o)
+        output_names=nothing
     )
-    @argcheck o.execution_provider in EXECUTION_PROVIDERS
-    @argcheck eltype(output_names) <: Union{AbstractString, Symbol}
-    @argcheck keytype(inputs) <: Union{AbstractString, Symbol}
-    expected_input_names = ONNXRunTime.input_names(o)
-    for key in keys(inputs)
-        if !(String(key) in expected_input_names)
-            msg = """
-            Invalid input name.
-            Expected: $(expected_input_names)
-            Got: $(key)
-            """
-            throw(ArgumentError(msg))
+    timer = o.timer
+    @timeit timer "pre CAPI.Run" begin
+        if output_names === nothing
+            output_names = @__MODULE__().output_names(o)
         end
-    end
-    expected_output_names = ONNXRunTime.output_names(o)
-    for name in output_names
-        if !(String(name) in expected_output_names)
-            msg = """
-            Invalid output name.
-            Expected: $(expected_output_names)
-            Got: $(name)
-            """
-            throw(ArgumentError(msg))
+        @argcheck o.execution_provider in EXECUTION_PROVIDERS
+        @argcheck eltype(output_names) <: Union{AbstractString, Symbol}
+        @argcheck keytype(inputs) <: Union{AbstractString, Symbol}
+        expected_input_names = ONNXRunTime.input_names(o)
+        for key in keys(inputs)
+            if !(String(key) in expected_input_names)
+                msg = """
+                Invalid input name.
+                Expected: $(expected_input_names)
+                Got: $(key)
+                """
+                throw(ArgumentError(msg))
+            end
         end
+        expected_output_names = ONNXRunTime.output_names(o)
+        for name in output_names
+            if !(String(name) in expected_output_names)
+                msg = """
+                Invalid output name.
+                Expected: $(expected_output_names)
+                Got: $(name)
+                """
+                throw(ArgumentError(msg))
+            end
+        end
+        inp_names, input_tensors = prepare_inputs(o, inputs)
+        run_options    = nothing
     end
-    inp_names, input_tensors = prepare_inputs(o, inputs)
-    run_options    = nothing
-    output_tensors = Run(o.api, o.session, run_options, inp_names, input_tensors, output_names)
-    make_output(o, inputs, output_names, output_tensors)
+    @timeit timer "CAPI.Run" begin
+        output_tensors = Run(o.api, o.session, run_options, inp_names, input_tensors, output_names)
+    end
+    @timeit timer "post CAPI.Run" begin
+        make_output(o, inputs, output_names, output_tensors)
+    end
 end

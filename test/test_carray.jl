@@ -42,6 +42,7 @@ end
             randn(1,2,3,4,5),
         ]
         carr = @inferred CArray(arr)
+        @test arr == collect(carr)::Array
         @test carr isa CArray
         @test size(arr) == size(carr)
         @test carr == arr

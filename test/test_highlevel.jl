@@ -73,6 +73,16 @@ using ONNXRunTime: juliatype
         out = model(inputs).output
         @test inputs.input == out
     end
+    @testset "matmul.onnx" begin
+        path = OX.testdatapath("matmul.onnx")
+        model = OX.load_inference(path)
+        inputs = (
+                  input1 = randn(Float32, 2,3),
+                  input2 = randn(Float32, 3,4),
+        )
+        out = model(inputs).output
+        @test out ≈ inputs.input1 * inputs.input2
+    end
 end
 
 

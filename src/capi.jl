@@ -5,7 +5,8 @@ This module closely follows the offical onnxruntime [C-API](https://github.com/m
 See [here](https://github.com/microsoft/onnxruntime-inference-examples/blob/d031f879c9a8d33c8b7dc52c5bc65fe8b9e3960d/c_cxx/fns_candy_style_transfer/fns_candy_style_transfer.c) for a C code example.
 """
 module CAPI
-using ONNXRunTime: CArray, unsafe_cwrap
+using ONNXRunTime: TIMER, reversedims_lazy
+using TimerOutputs: @timeit
 
 using DocStringExtensions
 using Libdl
@@ -824,7 +825,7 @@ end
 This function is unsafe, because its output points to memory owned by `tensor`.
 After `tensor` is released, accessing the output becomes undefined behaviour.
 """
-function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)::CArray
+function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)
     p_ptr = Ref(C_NULL)
     GC.@preserve tensor begin
         status = @ccall $(api.GetTensorMutableData)(
@@ -839,18 +840,8 @@ function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)::CArray
     shape = Tuple(GetDimensions(api, info))
     ptrT = Ptr{T}(p_ptr[])
     @check tensor.isalive
-    return unsafe_cwrap(ptrT, shape, own = false)
-end
-
-"""
-    $TYPEDSIGNATURES
-"""
-function GetTensorMutableData!(out::AbstractArray, api::OrtApi, tensor::OrtValue)::typeof(out)
-    GC.@preserve tensor begin
-        data_owned_by_tensor = unsafe_GetTensorMutableData(api, tensor)
-        copy!(out, data_owned_by_tensor)
-    end
-    return out
+    cstorage =  unsafe_wrap(Array, ptrT, reverse(shape), own = false)
+    return reversedims_lazy(cstorage)
 end
 
 """
@@ -858,10 +849,14 @@ end
 
 This function converts the tensor to fortran layout.
 """
-function GetTensorMutableData(api::OrtApi, tensor::OrtValue)::Array
+@timeit TIMER function GetTensorMutableData(api::OrtApi, tensor::OrtValue)::Array
     GC.@preserve tensor begin
-        data_owned_by_tensor = unsafe_GetTensorMutableData(api, tensor)
-        copy(data_owned_by_tensor)
+        @timeit TIMER "unsafe_GetTensorMutableData" begin
+            data_owned_by_tensor::PermutedDimsArray = unsafe_GetTensorMutableData(api, tensor)
+        end
+        @timeit TIMER "copy" begin
+            reversedims_lazy(copy(parent(data_owned_by_tensor)))
+        end
     end
 end
 
@@ -989,7 +984,7 @@ function OrtCUDAProviderOptions(;
         cudnn_conv_algo_search    = EXHAUSTIVE,
         gpu_mem_limit             = typemax(Csize_t),
         arena_extend_strategy     = 0,
-        do_copy_in_default_stream = false,
+        do_copy_in_default_stream = true,
         has_user_compute_stream   = false,
         user_compute_stream       = C_NULL,
         default_memory_arena_cfg  = C_NULL,
