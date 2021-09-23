@@ -20,7 +20,7 @@ Under the hood the following happens. We start with the julia matrix:
 # julia : [1 2 3;4 5 6]
 # memory: 1 4 2 5 3 6
 ```
-As a preproccing step this array is copied to C layout:
+As a preprocessing step this array is copied to C layout:
 ```julia
 # julia : [1 3 5; 2 4 6]
 # memory: 1 2 3 4 5 6
