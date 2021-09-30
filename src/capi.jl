@@ -347,9 +347,13 @@ for item in [
         Wraps a pointer to the C object of type $(string($OrtObj)).
         """
         mutable struct $OrtObj
+            # TODO
+            # most types don't actually need gchandles.
+            # we could get rid of them
+            # OrtValue needs gchandles
             ptr::Ptr{Cvoid}
             gchandles::Vector{Any}
-            isalive::Bool
+            isalive::Bool # We could encode isalive via obj.ptr == C_NULL
         end
     end
     if item.release
@@ -361,6 +365,7 @@ for item in [
                 f = api.$ReleaseObj
                 ccall(f, Cvoid, (Ptr{Cvoid},), obj.ptr)
             end
+            obj.ptr = C_NULL
             empty!(obj.gchandles)
             nothing
         end
