@@ -13,7 +13,7 @@ using Libdl
 using CEnum: @cenum
 using ArgCheck
 using LazyArtifacts
-using Pkg.Artifacts: @artifact_str, artifact_path
+using Pkg.Artifacts: artifact_path, ensure_artifact_installed, find_artifacts_toml
 
 const LIB_CPU  = Ref(C_NULL)
 const LIB_CUDA = Ref(C_NULL)
@@ -41,17 +41,19 @@ end
 function make_lib!(execution_provider)
     @argcheck execution_provider in EXECUTION_PROVIDERS
     root = if execution_provider === :cpu
-        let path
-            cpu_hash = artifact_hash("onnxruntime_cpu", joinpath(@__DIR__, "Artifacts.toml"))
-            path = artifact_path(cpu_hash)
+        let 
+            cpu_hash = artifact_hash("onnxruntime_cpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
+            ensure_artifact_installed("onnxruntime_cpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
+            artifact_path(cpu_hash)
         end
     elseif execution_provider === :cuda
-        let path
-            gpu_hash = artifact_hash("onnxruntime_gpu", joinpath(@__DIR__, "Artifacts.toml"))
+        let 
+            gpu_hash = artifact_hash("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
             if gpu_hash === nothing
                 error("Unsupported backend on current system")
             end
-            path = artifact_path(gpu_hash)
+            ensure_artifact_installed("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
+            artifact_path(gpu_hash)
         end
     else
         error("Unknown execution_provider $(repr(execution_provider))")
