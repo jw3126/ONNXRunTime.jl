@@ -12,7 +12,8 @@ using DocStringExtensions
 using Libdl
 using CEnum: @cenum
 using ArgCheck
-using Pkg.Artifacts: @artifact_str
+using LazyArtifacts
+using Pkg.Artifacts: @artifact_str, artifact_path
 
 const LIB_CPU  = Ref(C_NULL)
 const LIB_CUDA = Ref(C_NULL)
@@ -40,9 +41,18 @@ end
 function make_lib!(execution_provider)
     @argcheck execution_provider in EXECUTION_PROVIDERS
     root = if execution_provider === :cpu
-        artifact"onnxruntime_cpu"
+        let path
+            cpu_hash = artifact_hash("onnxruntime_cpu", joinpath(@__DIR__, "Artifacts.toml"))
+            path = artifact_path(cpu_hash)
+        end
     elseif execution_provider === :cuda
-        artifact"onnxruntime_gpu"
+        let path
+            gpu_hash = artifact_hash("onnxruntime_gpu", joinpath(@__DIR__, "Artifacts.toml"))
+            if gpu_hash === nothing
+                error("Unsupported backend on current system")
+            end
+            path = artifact_path(gpu_hash)
+        end
     else
         error("Unknown execution_provider $(repr(execution_provider))")
     end
