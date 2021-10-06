@@ -12,7 +12,7 @@ os = "linux"
 arch = "x86_64"
 git-tree-sha1 = "b32e2cfada1778f9f65843685dffcb62687d0054"
 lazy = true
-os = "osx"
+os = "macos"
 
     [[onnxruntime_cpu.download]]
     sha256 = "41f7e8f3039f00be41fa9e8fba881e3698822d9b70f8a80d4a8d6728b7a4b45b"
