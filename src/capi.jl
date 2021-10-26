@@ -41,13 +41,13 @@ end
 function make_lib!(execution_provider)
     @argcheck execution_provider in EXECUTION_PROVIDERS
     root = if execution_provider === :cpu
-        let 
+        let
             cpu_hash = artifact_hash("onnxruntime_cpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
             ensure_artifact_installed("onnxruntime_cpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
             artifact_path(cpu_hash)
         end
     elseif execution_provider === :cuda
-        let 
+        let
             gpu_hash = artifact_hash("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
             if gpu_hash === nothing
                 error("Unsupported backend on current system")
@@ -61,14 +61,14 @@ function make_lib!(execution_provider)
     @check isdir(root)
     dir = joinpath(root, only(readdir(root)))
     @check isdir(dir)
-    ext = if Sys.iswindows()
-        ".dll"
+    libname = if Sys.iswindows()
+        "onnxruntime.dll"
     elseif Sys.isapple()
-        ".dylib"
+        "libonnxruntime.dylib"
     else
-        ".so"
+        "libonnxruntime.so"
     end
-    path = joinpath(dir, "lib", "libonnxruntime" * ext)
+    path = joinpath(dir, "lib", libname)
     set_lib!(path, execution_provider)
 end
 
