@@ -31,6 +31,7 @@ end
 
 function set_lib!(path::AbstractString, execution_provider::Symbol)
     @argcheck ispath(path)
+    @argcheck isfile(path)
     LIB = libref(execution_provider)
     if LIB[] != C_NULL
         dlclose(LIB[])
@@ -50,7 +51,7 @@ function make_lib!(execution_provider)
         let
             gpu_hash = artifact_hash("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
             if gpu_hash === nothing
-                error("Unsupported backend on current system")
+                error("Unsupported backend $(backend) on current system")
             end
             ensure_artifact_installed("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
             artifact_path(gpu_hash)
@@ -69,6 +70,7 @@ function make_lib!(execution_provider)
         "libonnxruntime.so"
     end
     path = joinpath(dir, "lib", libname)
+    @check isfile(path)
     set_lib!(path, execution_provider)
 end
 
