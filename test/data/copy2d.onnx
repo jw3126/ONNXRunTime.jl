@@ -1,4 +1,4 @@
-pytorch1.9:p
+pytorch1.10:p
 %
 inputoutput
 Identity_0"Identitytorch-jit-exportZ

@@ -99,6 +99,29 @@ using ONNXRunTime: juliatype
             @test out.Z[ix,iy,iz] == iz-1
         end
     end
+    @testset "Conv1d1.onnx" begin
+        path = OX.testdatapath("Conv1d1.onnx")
+        model = OX.load_inference(path)
+        inputs = (input=randn(Float32,4,2,10),)
+        out = model(inputs)
+        expected = fill(0f0, 4,3,8)
+        expected[:,2,:] .= 1
+        @test out.output == expected
+    end
+    @testset "Conv1d2.onnx" begin
+        path = OX.testdatapath("Conv1d2.onnx")
+        model = OX.load_inference(path)
+        input = Array{Float32,3}(undef, (1,2,3))
+        input[1,1,1] = 1
+        input[1,1,2] = 2
+        input[1,1,3] = 3
+        input[1,2,1] = 4
+        input[1,2,2] = 5
+        input[1,2,3] = 6
+        inputs=(;input)
+        out = model(inputs).output
+        @test out == [1.0 0.0 0.0;;; 3.0 0.0 0.0;;; 5.0 0.0 0.0]
+    end
 end
 
 

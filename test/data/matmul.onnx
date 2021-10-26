@@ -1,4 +1,4 @@
-pytorch1.9:’
+pytorch1.10:’
 *
 input1
 input2outputMatMul_0"MatMultorch-jit-exportZ
