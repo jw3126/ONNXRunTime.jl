@@ -120,7 +120,12 @@ using ONNXRunTime: juliatype
         input[1,2,3] = 6
         inputs=(;input)
         out = model(inputs).output
-        @test out == [1.0 0.0 0.0;;; 3.0 0.0 0.0;;; 5.0 0.0 0.0]
+        @test out[1,1,1] == 1
+        @test out[1,1,2] == 3
+        @test out[1,1,3] == 5
+        @test out[1,2,1] == 0
+        @test out[1,2,2] == 0
+        @test out[1,2,3] == 0
     end
 end
 
