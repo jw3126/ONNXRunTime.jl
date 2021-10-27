@@ -20,6 +20,11 @@ const LIB_CUDA = Ref(C_NULL)
 
 const EXECUTION_PROVIDERS = [:cpu, :cuda]
 
+# For model_path on windows ONNX uses wchar_t while on linux + mac char is used.
+# Other strings use char on any platform it seems
+# https://github.com/microsoft/onnxruntime/issues/9568#issuecomment-952951564
+const Cmodel_path_t = Sys.iswindows() ? Cwstring : Cstring
+
 function docstring_cenum(T::Type)
     lines = ["    $(T)"]
     push!(lines, "CEnum with possible values:")
@@ -498,15 +503,15 @@ end
 function CreateSession(
     api::OrtApi,
     env::OrtEnv,
-    path::AbstractString,
+    model_path::AbstractString,
     options::OrtSessionOptions,
 )::OrtSession
-    @argcheck isfile(path)
+    @argcheck isfile(model_path)
     p_ptr = Ref(C_NULL)
-    gchandles = Any[api, env, path, options]
+    gchandles = Any[api, env, model_path, options]
     status = @ccall $(api.CreateSession)(
         env.ptr::Ptr{Cvoid},
-        path::Cstring,
+        model_path::Cmodel_path_t,
         options.ptr::Ptr{Cvoid},
         p_ptr::Ptr{Ptr{Cvoid}},
     )::OrtStatusPtr
@@ -697,7 +702,7 @@ for (onnx, T) in [
     (ONNX_TENSOR_ELEMENT_DATA_TYPE_INT16, Int16),
     (ONNX_TENSOR_ELEMENT_DATA_TYPE_INT32, Int32),
     (ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64, Int64),
-    (ONNX_TENSOR_ELEMENT_DATA_TYPE_STRING, Cstring),
+    (ONNX_TENSOR_ELEMENT_DATA_TYPE_STRING, Cstring), # is this correct on windows?
     # (ONNX_TENSOR_ELEMENT_DATA_TYPE_BOOL       ,
     # (ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16    ,
     (ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE, Cdouble),
