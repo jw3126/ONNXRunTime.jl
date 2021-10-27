@@ -46,24 +46,24 @@ end
 
 function make_lib!(execution_provider)
     @argcheck execution_provider in EXECUTION_PROVIDERS
-    root = if execution_provider === :cpu
-        let
-            cpu_hash = artifact_hash("onnxruntime_cpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
-            ensure_artifact_installed("onnxruntime_cpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
-            artifact_path(cpu_hash)
-        end
+    artifact_name = if execution_provider === :cpu
+        "onnxruntime_cpu"
     elseif execution_provider === :cuda
-        let
-            gpu_hash = artifact_hash("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
-            if gpu_hash === nothing
-                error("Unsupported backend $(backend) on current system")
-            end
-            ensure_artifact_installed("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
-            artifact_path(gpu_hash)
-        end
+        "onnxruntime_gpu"
     else
-        error("Unknown execution_provider $(repr(execution_provider))")
+        error("Unreachable")
     end
+    artifacts_toml = find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl"))
+    h = artifact_hash(artifact_name, artifacts_toml)
+    if h === nothing
+        msg = """
+        Unsupported execution_provider = $(repr(execution_provider)) for
+        this architectur.
+        """
+        error(msg)
+    end
+    ensure_artifact_installed(artifact_name, artifacts_toml)
+    root = artifact_path(h)
     @check isdir(root)
     dir = joinpath(root, only(readdir(root)))
     @check isdir(dir)
