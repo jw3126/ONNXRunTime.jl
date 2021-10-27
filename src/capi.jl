@@ -501,7 +501,7 @@ function CreateSession(
     path::AbstractString,
     options::OrtSessionOptions,
 )::OrtSession
-    @argcheck ispath(path)
+    @argcheck isfile(path)
     p_ptr = Ref(C_NULL)
     gchandles = Any[api, env, path, options]
     status = @ccall $(api.CreateSession)(
