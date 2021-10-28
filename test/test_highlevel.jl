@@ -58,6 +58,12 @@ using ONNXRunTime: juliatype
         @test res isa NamedTuple
         @test res.out1 == in2
         @test res.out2 == in1
+
+        s = sprint(show, model)
+        @test occursin("in1", s)
+        @test occursin("in2", s)
+        @test occursin("out1", s)
+        @test occursin("out2", s)
     end
     @testset "getindex_12.onnx" begin
         path = OX.testdatapath("getindex_12.onnx")

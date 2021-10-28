@@ -9,12 +9,16 @@ import ONNXRunTime as OX
     @testset "increment2x3" begin
         path = OX.testdatapath("increment2x3.onnx")
         session_options = CreateSessionOptions(api)
+        @test (sprint(show, session_options); true)
         @test_throws Exception CreateSession(api, env, "does_not_exits.onnx", session_options)
         session = CreateSession(api, env, path, session_options)
+        @test (sprint(show, session); true)
         @test SessionGetInputCount(api, session) == 1
         @test SessionGetOutputCount(api, session) == 1
         mem = CreateCpuMemoryInfo(api)
+        @test (sprint(show, mem); true)
         allocator = CreateAllocator(api, session, mem)
+        @test (sprint(show, allocator); true)
         @test SessionGetInputName(api, session, 0, allocator) == "input"
         @test_throws OX.OrtException SessionGetInputName(api, session, 1, allocator)
         @test SessionGetOutputName(api, session, 0, allocator) == "output"
@@ -32,6 +36,7 @@ import ONNXRunTime as OX
         outputs = Run(api, session, run_options, input_names, inputs, output_names)
         @test length(outputs) == 1
         output_tensor = first(outputs)
+        @test (sprint(show, output_tensor); true)
         @test output_tensor isa OrtValue
         output_array = GetTensorMutableData(api, output_tensor)
         @test typeof(output_array) <: AbstractMatrix{Float32}

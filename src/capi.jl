@@ -334,6 +334,14 @@ GetApi(; execution_provider = :cpu) = GetApi(OrtGetApiBase(; execution_provider)
 ##### OrtEnv
 ################################################################################
 
+function show_OrtObj(io::IO, @nospecialize o)
+    if o.isalive
+        print(io, typeof(o), "(", o.ptr, ")")
+    else
+        print(io, typeof(o), (;o.ptr, o.gchandles, o.isalive), "# DEAD")
+    end
+end
+
 for item in [
     (name=:Env                       , release=true),
     (name=:Status                    , release=true),
@@ -392,6 +400,7 @@ for item in [
             $ReleaseObj(api, obj)
         end
     end
+    @eval Base.show(io::IO, o::$OrtObj) = show_OrtObj(io, o)
     @eval export $OrtObj
 end
 
