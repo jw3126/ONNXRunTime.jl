@@ -20,6 +20,11 @@ const LIB_CUDA = Ref(C_NULL)
 
 const EXECUTION_PROVIDERS = [:cpu, :cuda]
 
+# For model_path on windows ONNX uses wchar_t while on linux + mac char is used.
+# Other strings use char on any platform it seems
+# https://github.com/microsoft/onnxruntime/issues/9568#issuecomment-952951564
+const Cmodel_path_t = Sys.iswindows() ? Cwstring : Cstring
+
 function docstring_cenum(T::Type)
     lines = ["    $(T)"]
     push!(lines, "CEnum with possible values:")
@@ -31,6 +36,7 @@ end
 
 function set_lib!(path::AbstractString, execution_provider::Symbol)
     @argcheck ispath(path)
+    @argcheck isfile(path)
     LIB = libref(execution_provider)
     if LIB[] != C_NULL
         dlclose(LIB[])
@@ -40,35 +46,36 @@ end
 
 function make_lib!(execution_provider)
     @argcheck execution_provider in EXECUTION_PROVIDERS
-    root = if execution_provider === :cpu
-        let 
-            cpu_hash = artifact_hash("onnxruntime_cpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
-            ensure_artifact_installed("onnxruntime_cpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
-            artifact_path(cpu_hash)
-        end
+    artifact_name = if execution_provider === :cpu
+        "onnxruntime_cpu"
     elseif execution_provider === :cuda
-        let 
-            gpu_hash = artifact_hash("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
-            if gpu_hash === nothing
-                error("Unsupported backend on current system")
-            end
-            ensure_artifact_installed("onnxruntime_gpu", find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl")))
-            artifact_path(gpu_hash)
-        end
+        "onnxruntime_gpu"
     else
-        error("Unknown execution_provider $(repr(execution_provider))")
+        error("Unreachable")
     end
+    artifacts_toml = find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl"))
+    h = artifact_hash(artifact_name, artifacts_toml)
+    if h === nothing
+        msg = """
+        Unsupported execution_provider = $(repr(execution_provider)) for
+        this architectur.
+        """
+        error(msg)
+    end
+    ensure_artifact_installed(artifact_name, artifacts_toml)
+    root = artifact_path(h)
     @check isdir(root)
     dir = joinpath(root, only(readdir(root)))
     @check isdir(dir)
-    ext = if Sys.iswindows()
-        ".dll"
+    libname = if Sys.iswindows()
+        "onnxruntime.dll"
     elseif Sys.isapple()
-        ".dylib"
+        "libonnxruntime.dylib"
     else
-        ".so"
+        "libonnxruntime.so"
     end
-    path = joinpath(dir, "lib", "libonnxruntime" * ext)
+    path = joinpath(dir, "lib", libname)
+    @check isfile(path)
     set_lib!(path, execution_provider)
 end
 
@@ -438,7 +445,6 @@ end
     $TYPEDSIGNATURES
 """
 function GetErrorMessage(api::OrtApi, status::OrtStatusPtr)::String
-    @argcheck status isa Ptr
     @argcheck status != C_NULL
     s = @ccall $(api.GetErrorMessage)(status::Ptr{Cvoid})::Cstring
     unsafe_string(s)
@@ -496,15 +502,15 @@ end
 function CreateSession(
     api::OrtApi,
     env::OrtEnv,
-    path::AbstractString,
+    model_path::AbstractString,
     options::OrtSessionOptions,
 )::OrtSession
-    @argcheck ispath(path)
+    @argcheck isfile(model_path)
     p_ptr = Ref(C_NULL)
-    gchandles = Any[api, env, path, options]
+    gchandles = Any[api, env, model_path, options]
     status = @ccall $(api.CreateSession)(
         env.ptr::Ptr{Cvoid},
-        path::Cstring,
+        model_path::Cmodel_path_t,
         options.ptr::Ptr{Cvoid},
         p_ptr::Ptr{Ptr{Cvoid}},
     )::OrtStatusPtr
@@ -695,7 +701,7 @@ for (onnx, T) in [
     (ONNX_TENSOR_ELEMENT_DATA_TYPE_INT16, Int16),
     (ONNX_TENSOR_ELEMENT_DATA_TYPE_INT32, Int32),
     (ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64, Int64),
-    (ONNX_TENSOR_ELEMENT_DATA_TYPE_STRING, Cstring),
+    (ONNX_TENSOR_ELEMENT_DATA_TYPE_STRING, Cstring), # is this correct on windows?
     # (ONNX_TENSOR_ELEMENT_DATA_TYPE_BOOL       ,
     # (ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16    ,
     (ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE, Cdouble),
@@ -766,7 +772,6 @@ function GetDimensions(
     out = Vector{Int64}(undef, ndims)
     GC.@preserve out o begin
         status = @ccall $(api.GetDimensions)(
-            api::OrtApi,
             o.ptr::Ptr{Cvoid},
             pointer(out)::Ptr{Int64},
             ndims::Csize_t,

@@ -40,22 +40,23 @@ julia> OX.load_inference(path, execution_provider=:cuda)
 The low level API mirrors the offical [C-API](https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347). The above example looks like this:
 ```julia
 using ONNXRunTime.CAPI
+using ONNXRunTime: testdatapath
 
-api = GetApi()
-env = CreateEnv(api, name="myenv")
-so = CreateSessionOptions(api)
-path = ONNXRunTime.testdatapath("increment2x3.onnx")
-session = CreateSession(api, env, path)
-mem = CreateCpuMemoryInfo(api)
+api = GetApi();
+env = CreateEnv(api, name="myenv");
+so = CreateSessionOptions(api);
+path = testdatapath("increment2x3.onnx");
+session = CreateSession(api, env, path, so);
+mem = CreateCpuMemoryInfo(api);
 input_array = randn(Float32, 2,3)
-input_tensor = CreateTensorWithDataAsOrtValue(api, mem, input_array)
-run_options = CreateRunOptions(api)
-input_names = ["input"]
-output_names = ["output"]
-inputs = [input_tensor]
-outputs = Run(api, session, run_options, input_names, inputs, output_names)
-output_tensor = only(outputs)
-output_array = GetTensorMutableData(api, output_tensor)
+input_tensor = CreateTensorWithDataAsOrtValue(api, mem, vec(input_array), size(input_array));
+run_options = CreateRunOptions(api);
+input_names = ["input"];
+output_names = ["output"];
+inputs = [input_tensor];
+outputs = Run(api, session, run_options, input_names, inputs, output_names);
+output_tensor = only(outputs);
+output_array = GetTensorMutableData(api, output_tensor);
 ```
 
 # Alternatives
