@@ -445,7 +445,6 @@ end
     $TYPEDSIGNATURES
 """
 function GetErrorMessage(api::OrtApi, status::OrtStatusPtr)::String
-    @argcheck status isa Ptr
     @argcheck status != C_NULL
     s = @ccall $(api.GetErrorMessage)(status::Ptr{Cvoid})::Cstring
     unsafe_string(s)
@@ -773,7 +772,6 @@ function GetDimensions(
     out = Vector{Int64}(undef, ndims)
     GC.@preserve out o begin
         status = @ccall $(api.GetDimensions)(
-            api::OrtApi,
             o.ptr::Ptr{Cvoid},
             pointer(out)::Ptr{Int64},
             ndims::Csize_t,
