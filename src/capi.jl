@@ -343,26 +343,24 @@ function show_OrtObj(io::IO, @nospecialize o)
 end
 
 for item in [
-    (name=:Env                       , release=true),
-    (name=:Status                    , release=true),
-    (name=:MemoryInfo                , release=true),
-    (name=:IoBinding                 , release=true),
-    (name=:Session                   , release=true),
-    (name=:Value                     , release=true),
-    (name=:RunOptions                , release=true),
-    (name=:TypeInfo                  , release=true),
-    (name=:TensorTypeAndShapeInfo    , release=true),
-    (name=:SessionOptions            , release=true),
-    (name=:CustomOpDomain            , release=true),
-    (name=:MapTypeInfo               , release=true),
-    (name=:SequenceTypeInfo          , release=true),
-    (name=:ModelMetadata             , release=true),
-    #(name=:ThreadPoolParams          , release=true),
-    (name=:ThreadingOptions          , release=true),
-    (name=:PrepackedWeightsContainer , release=true),
-    (name=:Allocator                 , release=true),
-    (name=:ArenaCfg                  , release=true),
-    #(name=:CUDAProviderOptions       , release=false),
+    (name=:Env                       ,),
+    (name=:Status                    ,),
+    (name=:MemoryInfo                ,),
+    (name=:IoBinding                 ,),
+    (name=:Session                   ,),
+    (name=:Value                     ,),
+    (name=:RunOptions                ,),
+    (name=:TypeInfo                  ,),
+    (name=:TensorTypeAndShapeInfo    ,),
+    (name=:SessionOptions            ,),
+    (name=:CustomOpDomain            ,),
+    (name=:MapTypeInfo               ,),
+    (name=:SequenceTypeInfo          ,),
+    (name=:ThreadingOptions          ,),
+    (name=:PrepackedWeightsContainer ,),
+    (name=:Allocator                 ,),
+    (name=:ArenaCfg                  ,),
+    (name=:ModelMetadata             ,),
 ]
     Obj = item.name
     OrtObj = Symbol(:Ort, Obj)
@@ -383,22 +381,20 @@ for item in [
             isalive::Bool # We could encode isalive via obj.ptr == C_NULL
         end
     end
-    if item.release
-        if !(ReleaseObj in fieldnames(OrtApi))
-            error("$ReleaseObj not in fieldnames(OrtApi)")
+    if !(ReleaseObj in fieldnames(OrtApi))
+        error("$ReleaseObj not in fieldnames(OrtApi)")
+    end
+    @eval function $ReleaseObj(api::OrtApi, obj::$OrtObj)::Nothing
+        if obj.isalive
+            f = api.$ReleaseObj
+            ccall(f, Cvoid, (Ptr{Cvoid},), obj.ptr)
         end
-        @eval function $ReleaseObj(api::OrtApi, obj::$OrtObj)::Nothing
-            if obj.isalive
-                f = api.$ReleaseObj
-                ccall(f, Cvoid, (Ptr{Cvoid},), obj.ptr)
-            end
-            obj.ptr = C_NULL
-            empty!(obj.gchandles)
-            nothing
-        end
-        @eval function release(api::OrtApi, obj::$OrtObj)::Nothing
-            $ReleaseObj(api, obj)
-        end
+        obj.ptr = C_NULL
+        empty!(obj.gchandles)
+        nothing
+    end
+    @eval function release(api::OrtApi, obj::$OrtObj)::Nothing
+        $ReleaseObj(api, obj)
     end
     @eval Base.show(io::IO, o::$OrtObj) = show_OrtObj(io, o)
     @eval export $OrtObj
@@ -458,7 +454,7 @@ function GetErrorMessage(api::OrtApi, status::OrtStatusPtr)::String
     s = @ccall $(api.GetErrorMessage)(status::Ptr{Cvoid})::Cstring
     unsafe_string(s)
 end
-function check_and_release(api, status::OrtStatusPtr)::Nothing
+function check_and_release(api::OrtApi, status::OrtStatusPtr)::Nothing
     if status != C_NULL
         msg = GetErrorMessage(api, status)
         _release_status_ptr(api, status)
@@ -1048,6 +1044,64 @@ function SessionOptionsAppendExecutionProvider_CUDA(
         check_and_release(api, status)
     end
 end
+
+################################################################################
+##### OrtModelMetadata
+################################################################################
+function SessionGetModelMetadata(api::OrtApi, session::OrtSession)::OrtModelMetadata
+    p_ptr = Ref(C_NULL)
+    gchandles = Any[api, session]
+    status = @ccall $(api.SessionGetModelMetadata)(
+        session.ptr::Ptr{Cvoid},
+        p_ptr::Ptr{Ptr{Cvoid}},
+    )::OrtStatusPtr
+    into_julia(OrtModelMetadata, api, p_ptr, status, gchandles)
+end
+
+function _ModelMetadataGetString(
+    name::Symbol,
+    api::OrtApi,
+    model_metadata::OrtModelMetadata,
+    allocator::OrtAllocator,
+)::String
+    p_ptr = Ref{Cstring}(C_NULL)
+    f = getproperty(api, name)
+    GC.@preserve api model_metadata allocator begin
+        status = @ccall $(f)(
+            model_metadata.ptr::Ptr{Cvoid},
+            allocator.ptr::Ptr{Cvoid},
+            p_ptr::Ptr{Cstring},
+        )::OrtStatusPtr
+    end
+    check_and_release(api, status)
+    ret = unsafe_string(p_ptr[])
+    # Base.Libc.free(p_ptr[])
+    return ret
+end
+
+for f in [:ModelMetadataGetProducerName,
+          :ModelMetadataGetGraphName,
+          :ModelMetadataGetDescription,
+          :ModelMetadataGetDomain,
+         ]
+    @eval function $f(api::OrtApi,
+            model_metadata::OrtModelMetadata,
+            allocator::OrtAllocator)
+        _ModelMetadataGetString($(QuoteNode(f))::Symbol, api, model_metadata, allocator)
+    end
+end
+
+#   /**
+#    * \param value  is set to a null terminated string allocated using 'allocator'. The caller is responsible for freeing it.
+#    */
+#   ORT_API2_STATUS(ModelMetadataGetProducerName, _In_ const OrtModelMetadata* model_metadata,
+#                   _Inout_ OrtAllocator* allocator, _Outptr_ char** value);
+#   ORT_API2_STATUS(ModelMetadataGetGraphName, _In_ const OrtModelMetadata* model_metadata,
+#                   _Inout_ OrtAllocator* allocator, _Outptr_ char** value);
+#   ORT_API2_STATUS(ModelMetadataGetDomain, _In_ const OrtModelMetadata* model_metadata, _Inout_ OrtAllocator* allocator,
+#                   _Outptr_ char** value);
+#   ORT_API2_STATUS(ModelMetadataGetDescription, _In_ const OrtModelMetadata* model_metadata,
+#                   _Inout_ OrtAllocator* allocator, _Outptr_ char** value);
 
 ################################################################################
 ##### exports

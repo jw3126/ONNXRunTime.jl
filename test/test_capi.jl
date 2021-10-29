@@ -4,9 +4,9 @@ using ONNXRunTime.CAPI
 import ONNXRunTime as OX
 
 @testset "Session" begin
-    api = GetApi()
-    env = CreateEnv(api, name="myenv")
     @testset "increment2x3" begin
+        api = GetApi()
+        env = CreateEnv(api, name="myenv")
         path = OX.testdatapath("increment2x3.onnx")
         session_options = CreateSessionOptions(api)
         @test (sprint(show, session_options); true)
@@ -42,6 +42,23 @@ import ONNXRunTime as OX
         @test typeof(output_array) <: AbstractMatrix{Float32}
         @test size(output_array) == (2,3)
         @test output_array ≈ 1 .+ input_array
+    end
+    @testset "increment2x3 ModelMetadata" begin
+        api = GetApi()
+        env = CreateEnv(api, name="myenv")
+        path = OX.testdatapath("increment2x3.onnx")
+        session_options = CreateSessionOptions(api)
+        @test (sprint(show, session_options); true)
+        @test_throws Exception CreateSession(api, env, "does_not_exits.onnx", session_options)
+        session = CreateSession(api, env, path, session_options)
+        model_metadata = SessionGetModelMetadata(api, session)
+        @test model_metadata isa OrtModelMetadata
+        mem = CreateCpuMemoryInfo(api)
+        allocator = CreateAllocator(api, session, mem)
+        @test CAPI.ModelMetadataGetProducerName(api, model_metadata, allocator) == "pytorch"
+        @test CAPI.ModelMetadataGetGraphName(api, model_metadata, allocator) == "torch-jit-export"
+        @test CAPI.ModelMetadataGetDescription(api, model_metadata, allocator) == ""
+        @test CAPI.ModelMetadataGetDomain(api, model_metadata, allocator) == ""
     end
 end
 
