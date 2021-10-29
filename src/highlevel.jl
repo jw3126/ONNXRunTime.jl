@@ -34,9 +34,9 @@ end
 function Base.show(io::IO, o::InferenceSession)
     print(io,
 """InferenceSession
-    execution_provider: $(repr(o.execution_provider))
     input_names:        $(input_names(o))
     output_names:       $(output_names(o))
+    execution_provider: $(repr(o.execution_provider))
 """
 )
 end

@@ -485,6 +485,32 @@ function CreateEnv(
 end
 
 ################################################################################
+##### OrtAllocator
+################################################################################
+struct _OrtAllocator
+    version::UInt32
+    Alloc::Ptr{Cvoid}
+    Free::Ptr{Cvoid}
+    Info::Ptr{Cvoid}
+end
+
+"""
+    $TYPEDSIGNATURES
+"""
+function Free(alloc::OrtAllocator, ptr::Union{Ptr, Cstring})::Nothing
+    ptr = Ptr{Cvoid}(ptr)
+    _alloc_ptr = Ptr{_OrtAllocator}(alloc.ptr)
+    _alloc = unsafe_load(_alloc_ptr)
+    GC.@preserve alloc begin
+        @ccall $(_alloc.Free)(
+                alloc.ptr::Ptr{Cvoid},
+                ptr::Ptr{Cvoid},
+        )::Cvoid
+    end
+    nothing
+end
+
+################################################################################
 ##### SessionOptions
 ################################################################################
 
@@ -1048,6 +1074,9 @@ end
 ################################################################################
 ##### OrtModelMetadata
 ################################################################################
+"""
+    $TYPEDSIGNATURES
+"""
 function SessionGetModelMetadata(api::OrtApi, session::OrtSession)::OrtModelMetadata
     p_ptr = Ref(C_NULL)
     gchandles = Any[api, session]
@@ -1075,7 +1104,7 @@ function _ModelMetadataGetString(
     end
     check_and_release(api, status)
     ret = unsafe_string(p_ptr[])
-    # Base.Libc.free(p_ptr[])
+    Free(allocator, p_ptr[])
     return ret
 end
 
@@ -1083,6 +1112,7 @@ for f in [:ModelMetadataGetProducerName,
           :ModelMetadataGetGraphName,
           :ModelMetadataGetDescription,
           :ModelMetadataGetDomain,
+          :ModelMetadataGetGraphDescription,
          ]
     @eval function $f(api::OrtApi,
             model_metadata::OrtModelMetadata,

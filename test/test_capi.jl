@@ -59,6 +59,7 @@ import ONNXRunTime as OX
         @test CAPI.ModelMetadataGetGraphName(api, model_metadata, allocator) == "torch-jit-export"
         @test CAPI.ModelMetadataGetDescription(api, model_metadata, allocator) == ""
         @test CAPI.ModelMetadataGetDomain(api, model_metadata, allocator) == ""
+        @test CAPI.ModelMetadataGetGraphDescription(api, model_metadata, allocator) == ""
     end
 end
 
