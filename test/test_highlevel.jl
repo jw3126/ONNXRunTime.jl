@@ -133,6 +133,22 @@ using ONNXRunTime: juliatype
         @test out[1,2,2] == 0
         @test out[1,2,3] == 0
     end
+    @testset "Dict2Dict.onnx" begin
+        path = OX.testdatapath("Dict2Dict.onnx")
+        model = OX.load_inference(path, execution_provider=:cpu)
+        @test OX.input_names(model) == ["x", "y"]
+        @test OX.output_names(model) == ["x_times_y", "x_plus_y", "x_minus_y", "x_plus_1", "y_plus_2"]
+        nb = rand(1:10)
+        x = randn(Float32, nb,3)
+        y = randn(Float32, nb,3)
+        input = (;x,y)
+        out = model(input)
+        @test out.x_plus_y  ≈ x .+ y
+        @test out.x_minus_y ≈ x .- y
+        @test out.x_times_y ≈ x .* y
+        @test out.x_plus_1  ≈ x .+ 1
+        @test out.y_plus_2  ≈ y .+ 2
+    end
 end
 
 

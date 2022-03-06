@@ -37,8 +37,7 @@ function Base.show(io::IO, o::InferenceSession)
     input_names:        $(input_names(o))
     output_names:       $(output_names(o))
     execution_provider: $(repr(o.execution_provider))
-"""
-)
+""")
 end
 
 input_names(o::InferenceSession) = o._input_names
