@@ -5,8 +5,7 @@ This module closely follows the offical onnxruntime [C-API](https://github.com/m
 See [here](https://github.com/microsoft/onnxruntime-inference-examples/blob/d031f879c9a8d33c8b7dc52c5bc65fe8b9e3960d/c_cxx/fns_candy_style_transfer/fns_candy_style_transfer.c) for a C code example.
 """
 module CAPI
-using ONNXRunTime: TIMER, reversedims_lazy
-using TimerOutputs: @timeit
+using ONNXRunTime: reversedims_lazy
 
 using DocStringExtensions
 using Libdl
@@ -901,14 +900,10 @@ end
     $TYPEDSIGNATURES
 
 """
-@timeit TIMER function GetTensorMutableData(api::OrtApi, tensor::OrtValue)::AbstractArray
+function GetTensorMutableData(api::OrtApi, tensor::OrtValue)::AbstractArray
     GC.@preserve tensor begin
-        @timeit TIMER "unsafe_GetTensorMutableData" begin
-            data_owned_by_tensor::PermutedDimsArray = unsafe_GetTensorMutableData(api, tensor)
-        end
-        @timeit TIMER "copy" begin
-            reversedims_lazy(copy(parent(data_owned_by_tensor)))
-        end
+        data_owned_by_tensor::PermutedDimsArray = unsafe_GetTensorMutableData(api, tensor)
+        reversedims_lazy(copy(parent(data_owned_by_tensor)))
     end
 end
 
