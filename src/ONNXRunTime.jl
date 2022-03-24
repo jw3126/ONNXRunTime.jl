@@ -1,8 +1,5 @@
 module ONNXRunTime
 using Requires:@require
-import TimerOutputs
-
-const TIMER = TimerOutputs.TimerOutput()
 
 function _perm(arr::AbstractArray{T,N}) where {T,N}
     ntuple(i->N+1-i, N)
