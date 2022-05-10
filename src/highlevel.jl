@@ -26,8 +26,8 @@ struct InferenceSession
     session::OrtSession
     meminfo::OrtMemoryInfo
     allocator::OrtAllocator
-    _input_names::Vector{String}
-    _output_names::Vector{String}
+    input_names::Vector{String}
+    output_names::Vector{String}
 end
 function Base.show(io::IO, o::InferenceSession)
     print(io,
@@ -38,8 +38,8 @@ function Base.show(io::IO, o::InferenceSession)
 """)
 end
 
-input_names(o::InferenceSession) = o._input_names
-output_names(o::InferenceSession) = o._output_names
+input_names(o::InferenceSession) = o.input_names
+output_names(o::InferenceSession) = o.output_names
 
 function input_names(api::OrtApi, session::OrtSession, allocator::OrtAllocator)::Vector{String}
     n = SessionGetInputCount(api, session)
@@ -128,7 +128,7 @@ end
 
 Run an [`InferenceSession`](@ref) on a collection of inputs. Here `inputs` can either
 be a `NamedTuple` or an `AbstractDict`. Optionally `output_names` can be passed.
-In this case only the outputs whose name is contained in `output_names` are computed.
+In this case only the outputs whose names are contained in `output_names` are computed.
 """
 function (o::InferenceSession)(
                                inputs,
