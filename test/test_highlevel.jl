@@ -11,6 +11,8 @@ using ONNXRunTime: juliatype
         model = OX.load_inference(path, execution_provider=:cpu)
         @test OX.input_names(model) == ["input"]
         @test OX.output_names(model) == ["output"]
+        @test OX.input_names(model) === model.input_names
+        @test OX.output_names(model) === model.output_names
         input = randn(Float32, 2,3)
         #= this works             =# model(Dict("input" => randn(Float32, 2,3)), ["output"])
         @test_throws OX.ArgumentError model(Dict("nonsense" => input), ["output"])
