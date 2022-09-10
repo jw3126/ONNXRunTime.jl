@@ -5,19 +5,18 @@ This module closely follows the offical onnxruntime [C-API](https://github.com/m
 See [here](https://github.com/microsoft/onnxruntime-inference-examples/blob/d031f879c9a8d33c8b7dc52c5bc65fe8b9e3960d/c_cxx/fns_candy_style_transfer/fns_candy_style_transfer.c) for a C code example.
 """
 module CAPI
-using ONNXRunTime: reversedims_lazy
+
+using ONNXRunTime: EXECUTION_PROVIDERS, artifact_dir_map, reversedims_lazy
+
+using ONNXRuntime_jll
 
 using DocStringExtensions
 using Libdl
 using CEnum: @cenum
 using ArgCheck
-using LazyArtifacts
-using Pkg.Artifacts: artifact_path, ensure_artifact_installed, find_artifacts_toml
 
 const LIB_CPU  = Ref(C_NULL)
 const LIB_CUDA = Ref(C_NULL)
-
-const EXECUTION_PROVIDERS = [:cpu, :cuda]
 
 # For model_path on windows ONNX uses wchar_t while on linux + mac char is used.
 # Other strings use char on any platform it seems
@@ -45,36 +44,9 @@ end
 
 function make_lib!(execution_provider)
     @argcheck execution_provider in EXECUTION_PROVIDERS
-    artifact_name = if execution_provider === :cpu
-        "onnxruntime_cpu"
-    elseif execution_provider === :cuda
-        "onnxruntime_gpu"
-    else
-        error("Unreachable")
-    end
-    artifacts_toml = find_artifacts_toml(joinpath(@__DIR__ , "ONNXRunTime.jl"))
-    h = artifact_hash(artifact_name, artifacts_toml)
-    if h === nothing
-        msg = """
-        Unsupported execution_provider = $(repr(execution_provider)) for
-        this architectur.
-        """
-        error(msg)
-    end
-    ensure_artifact_installed(artifact_name, artifacts_toml)
-    root = artifact_path(h)
-    @check isdir(root)
-    dir = joinpath(root, only(readdir(root)))
-    @check isdir(dir)
-    libname = if Sys.iswindows()
-        "onnxruntime.dll"
-    elseif Sys.isapple()
-        "libonnxruntime.dylib"
-    else
-        "libonnxruntime.so"
-    end
-    path = joinpath(dir, "lib", libname)
-    @check isfile(path)
+    path = ONNXRuntime_jll.libonnxruntime_path
+    rel_path = joinpath(basename(dirname(path)), basename(path))
+    path = joinpath(artifact_dir_map[execution_provider], rel_path)
     set_lib!(path, execution_provider)
 end
 
