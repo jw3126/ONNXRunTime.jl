@@ -1,5 +1,4 @@
 using ArgCheck
-using LazyArtifacts
 using DataStructures: OrderedDict
 using DocStringExtensions
 ################################################################################
@@ -11,7 +10,7 @@ end
 
 
 using .CAPI
-using .CAPI: juliatype, EXECUTION_PROVIDERS
+using .CAPI: juliatype
 export InferenceSession, load_inference
 
 """
