@@ -1,5 +1,9 @@
 module ONNXRunTime
 
+using Artifacts
+using LazyArtifacts
+using ONNXRuntime_jll
+
 function _perm(arr::AbstractArray{T,N}) where {T,N}
     ntuple(i->N+1-i, N)
 end
