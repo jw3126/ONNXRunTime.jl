@@ -6,8 +6,10 @@ CUDA_FUNCTIONAL = false
 try
     import CUDA
     global CUDA_INSTALLED = true
-    global CUDA_FUNCTIONAL = CUDA.functional()
-catch
+    CUDA.versioninfo()
+    global CUDA_FUNCTIONAL = true
+catch err
+    showerror(stderr, err)
 end
 if CUDA_INSTALLED && CUDA_FUNCTIONAL
     @info """
