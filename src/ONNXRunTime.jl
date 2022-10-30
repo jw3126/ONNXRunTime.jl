@@ -15,7 +15,9 @@ include("capi.jl")
 include("highlevel.jl")
 
 function __init__()
-    @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" include("cuda.jl")
+    @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" begin
+        CUDA.functional() && include("cuda.jl")
+    end
 end
 
 end #module
