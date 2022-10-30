@@ -1,24 +1,12 @@
 include("test_highlevel.jl")
 include("test_capi.jl")
 
-CUDA_INSTALLED = false
-CUDA_FUNCTIONAL = false
-try
-    import CUDA
-    global CUDA_INSTALLED = true
-    global CUDA_FUNCTIONAL = CUDA.functional()
-catch
-end
-if CUDA_INSTALLED && CUDA_FUNCTIONAL
-    @info """
-    Found a working CUDA.jl package, running CUDA tests
-    """
+import CUDA
+if CUDA.functional()  
     include("test_cuda.jl")
 else
     msg = """
-    Skipping CUDA tests. Got
-    CUDA_INSTALLED = $CUDA_INSTALLED
-    CUDA_FUNCTIONAL = $CUDA_FUNCTIONAL
+    Skipping CUDA.jl not functional. Skipping CUDA tests.
     """
     @warn msg
 end
