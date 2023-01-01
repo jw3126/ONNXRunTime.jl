@@ -310,7 +310,7 @@ const OrtStatusPtr = Ptr{Cvoid}
 function OrtGetApiBase(; execution_provider::Symbol = :cpu)::OrtApiBase
     @argcheck execution_provider in EXECUTION_PROVIDERS
     f = dlsym(libptr(execution_provider), :OrtGetApiBase)
-    api_base = unsafe_load(@ccall $f()::Ptr{OrtApiBase})
+    unsafe_load(@ccall $f()::Ptr{OrtApiBase})
 end
 """
     $TYPEDSIGNATURES
@@ -334,10 +334,10 @@ GetApi(; execution_provider = :cpu) = GetApi(OrtGetApiBase(; execution_provider)
 ################################################################################
 
 function show_OrtObj(io::IO, @nospecialize o)
-    if o.isalive
+    if isalive(o)
         print(io, typeof(o), "(", o.ptr, ")")
     else
-        print(io, typeof(o), (;o.ptr, o.gchandles, o.isalive), "# DEAD")
+        print(io, typeof(o), (;o.ptr, o.gchandles), "#= DEAD =#")
     end
 end
 
@@ -361,9 +361,8 @@ for item in [
     (name=:ArenaCfg                  ,),
     (name=:ModelMetadata             ,),
 ]
-    Obj = item.name
-    OrtObj = Symbol(:Ort, Obj)
-    ReleaseObj = Symbol(:Release, Obj)
+    OrtObj = Symbol(:Ort, item.name)
+    ReleaseObj = Symbol(:Release, item.name)
     @eval begin
         """
             $(string($OrtObj))
@@ -377,18 +376,17 @@ for item in [
             # OrtValue needs gchandles
             ptr::Ptr{Cvoid}
             gchandles::Vector{Any}
-            isalive::Bool # We could encode isalive via obj.ptr == C_NULL
         end
     end
     if !(ReleaseObj in fieldnames(OrtApi))
         error("$ReleaseObj not in fieldnames(OrtApi)")
     end
+    @eval Base.cconvert(::Type{Ptr{Cvoid}}, obj::$OrtObj) = obj.ptr
     @eval function $ReleaseObj(api::OrtApi, obj::$OrtObj)::Nothing
-        if obj.isalive
-            f = api.$ReleaseObj
-            ccall(f, Cvoid, (Ptr{Cvoid},), obj.ptr)
+        if isalive(obj)
+            ccall(api.$ReleaseObj, Cvoid, (Ptr{Cvoid},), obj.ptr)
+            obj.ptr = C_NULL
         end
-        obj.ptr = C_NULL
         empty!(obj.gchandles)
         nothing
     end
@@ -397,6 +395,7 @@ for item in [
     end
     @eval Base.show(io::IO, o::$OrtObj) = show_OrtObj(io, o)
     @eval export $OrtObj
+    @eval isalive(o::$OrtObj) = (o.ptr !== C_NULL)
 end
 
 """
@@ -427,8 +426,7 @@ function into_julia(
     if ptr == C_NULL
         error("Unexpected Null ptr")
     end
-    alive = true
-    ret = T(ptr, gchandles, alive)
+    ret = T(ptr, gchandles)
     finalizer(ret) do obj
         release(api, obj)
     end
@@ -500,12 +498,10 @@ function Free(alloc::OrtAllocator, ptr::Union{Ptr, Cstring})::Nothing
     ptr = Ptr{Cvoid}(ptr)
     _alloc_ptr = Ptr{_OrtAllocator}(alloc.ptr)
     _alloc = unsafe_load(_alloc_ptr)
-    GC.@preserve alloc begin
-        @ccall $(_alloc.Free)(
-                alloc.ptr::Ptr{Cvoid},
-                ptr::Ptr{Cvoid},
-        )::Cvoid
-    end
+    @ccall $(_alloc.Free)(
+            alloc::Ptr{Cvoid},
+            ptr::Ptr{Cvoid},
+    )::Cvoid
     nothing
 end
 
@@ -891,7 +887,7 @@ function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)
     T = juliatype(ONNX_type)
     shape = Tuple(GetDimensions(api, info))
     ptrT = Ptr{T}(p_ptr[])
-    @check tensor.isalive
+    @check isalive(tensor)
     cstorage =  unsafe_wrap(Array, ptrT, reverse(shape), own = false)
     return reversedims_lazy(cstorage)
 end
@@ -967,9 +963,8 @@ function Run(
         check_and_release(api, status)
         outdims = (output_names_len,)
         outputs = map(_outputs) do ptr
-            isalive = true
             gchandles = Any[]
-            out = OrtValue(ptr, gchandles, isalive)
+            out = OrtValue(ptr, gchandles)
             finalizer(out) do val
                 release(api, val)
             end
