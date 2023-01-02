@@ -395,7 +395,7 @@ for item in [
     end
     @eval Base.show(io::IO, o::$OrtObj) = show_OrtObj(io, o)
     @eval export $OrtObj
-    @eval isalive(o::$OrtObj) = (o.ptr !== C_NULL)
+    @eval isalive(o::$OrtObj)::Bool = (o.ptr !== C_NULL)
 end
 
 """
@@ -535,9 +535,9 @@ function CreateSession(
     p_ptr = Ref(C_NULL)
     gchandles = Any[api, env, model_path, options]
     status = @ccall $(api.CreateSession)(
-        env.ptr::Ptr{Cvoid},
+        env::Ptr{Cvoid},
         model_path::Cmodel_path_t,
-        options.ptr::Ptr{Cvoid},
+        options::Ptr{Cvoid},
         p_ptr::Ptr{Ptr{Cvoid}},
     )::OrtStatusPtr
     into_julia(OrtSession, api, p_ptr, status, gchandles)
@@ -548,12 +548,10 @@ end
 """
 function SessionGetInputCount(api::OrtApi, session::OrtSession)::Csize_t
     out = Ref{Csize_t}()
-    GC.@preserve session begin
-        status = @ccall $(api.SessionGetInputCount)(
-            session.ptr::Ptr{Cvoid},
-            out::Ptr{Csize_t},
-        )::OrtStatusPtr
-    end
+    status = @ccall $(api.SessionGetInputCount)(
+        session::Ptr{Cvoid},
+        out::Ptr{Csize_t},
+    )::OrtStatusPtr
     check_and_release(api, status)
     return out[]
 end
@@ -569,8 +567,8 @@ function CreateAllocator(
     p_ptr = Ref(C_NULL)
     gchandles = Any[api, session, meminfo]
     status = @ccall $(api.CreateAllocator)(
-        session.ptr::Ptr{Cvoid},
-        meminfo.ptr::Ptr{Cvoid},
+        session::Ptr{Cvoid},
+        meminfo::Ptr{Cvoid},
         p_ptr::Ptr{Ptr{Cvoid}},
     )::OrtStatusPtr
     into_julia(OrtAllocator, api, p_ptr, status, gchandles)
@@ -580,13 +578,11 @@ end
     $TYPEDSIGNATURES
 """
 function AllocatorFree(api::OrtApi, allocator::OrtAllocator, ptr::Ptr)
-    GC.@preserve api allocator begin
-        status = @ccall $(api.AllocatorFree)(
-            allocator.ptr::Ptr{Cvoid},
-            ptr::Ptr{Cvoid},
-        )::OrtStatusPtr
-        check_and_release(api, status)
-    end
+    status = @ccall $(api.AllocatorFree)(
+        allocator::Ptr{Cvoid},
+        ptr::Ptr{Cvoid},
+    )::OrtStatusPtr
+    check_and_release(api, status)
 end
 
 """
@@ -599,18 +595,16 @@ function SessionGetInputName(
     allocator::OrtAllocator,
 )::String
     p_ptr = Ref{Cstring}(C_NULL)
-    GC.@preserve api session allocator begin
-        status = @ccall $(api.SessionGetInputName)(
-            session.ptr::Ptr{Cvoid},
-            index::Csize_t,
-            allocator.ptr::Ptr{Cvoid},
-            p_ptr::Ptr{Cstring},
-        )::OrtStatusPtr
-        check_and_release(api, status)
-        ret = unsafe_string(p_ptr[])
-        AllocatorFree(api, allocator, pointer(p_ptr[]))
-        return ret
-    end
+    status = @ccall $(api.SessionGetInputName)(
+        session::Ptr{Cvoid},
+        index::Csize_t,
+        allocator::Ptr{Cvoid},
+        p_ptr::Ptr{Cstring},
+    )::OrtStatusPtr
+    check_and_release(api, status)
+    ret = unsafe_string(p_ptr[])
+    AllocatorFree(api, allocator, pointer(p_ptr[]))
+    return ret
 end
 
 """
@@ -623,18 +617,16 @@ function SessionGetOutputName(
     allocator::OrtAllocator,
 )::String
     p_ptr = Ref{Cstring}(C_NULL)
-    GC.@preserve api session allocator begin
-        status = @ccall $(api.SessionGetOutputName)(
-            session.ptr::Ptr{Cvoid},
-            index::Csize_t,
-            allocator.ptr::Ptr{Cvoid},
-            p_ptr::Ptr{Cstring},
-        )::OrtStatusPtr
-        check_and_release(api, status)
-        ret = unsafe_string(p_ptr[])
-        AllocatorFree(api, allocator, pointer(p_ptr[]))
-        return ret
-    end
+    status = @ccall $(api.SessionGetOutputName)(
+        session::Ptr{Cvoid},
+        index::Csize_t,
+        allocator::Ptr{Cvoid},
+        p_ptr::Ptr{Cstring},
+    )::OrtStatusPtr
+    check_and_release(api, status)
+    ret = unsafe_string(p_ptr[])
+    AllocatorFree(api, allocator, pointer(p_ptr[]))
+    return ret
 end
 
 """
@@ -642,12 +634,10 @@ end
 """
 function SessionGetOutputCount(api::OrtApi, sess::OrtSession)::Csize_t
     out = Ref{Csize_t}()
-    GC.@preserve sess begin
-        status = @ccall $(api.SessionGetOutputCount)(
-            sess.ptr::Ptr{Cvoid},
-            out::Ptr{Csize_t},
-        )::OrtStatusPtr
-    end
+    status = @ccall $(api.SessionGetOutputCount)(
+        sess::Ptr{Cvoid},
+        out::Ptr{Csize_t},
+    )::OrtStatusPtr
     check_and_release(api, status)
     return out[]
 end
@@ -746,10 +736,8 @@ end
 """
 function IsTensor(api::OrtApi, val::OrtValue)::Bool
     out = Ref(Cint(0))
-    GC.@preserve val begin
-        status = @ccall $(api.IsTensor)(val.ptr::Ptr{Cvoid}, out::Ptr{Cint})::OrtStatusPtr
-        check_and_release(api, status)
-    end
+    status = @ccall $(api.IsTensor)(val::Ptr{Cvoid}, out::Ptr{Cint})::OrtStatusPtr
+    check_and_release(api, status)
     return Bool(out[])
 end
 
@@ -762,14 +750,12 @@ function GetTensorElementType(
 )::ONNXTensorElementDataType
     # https://github.com/microsoft/onnxruntime/blob/1886f1a737fb3aa891dea213e076a091002e083f/onnxruntime/core/framework/tensor_type_and_shape.cc#L54
     p_out = Ref{ONNXTensorElementDataType}()
-    GC.@preserve o begin
-        status = @ccall $(api.GetTensorElementType)(
-            o.ptr::Ptr{Cvoid},
-            p_out::Ptr{ONNXTensorElementDataType},
-        )::OrtStatusPtr
-        check_and_release(api, status)
-        p_out[]
-    end
+    status = @ccall $(api.GetTensorElementType)(
+        o::Ptr{Cvoid},
+        p_out::Ptr{ONNXTensorElementDataType},
+    )::OrtStatusPtr
+    check_and_release(api, status)
+    p_out[]
 end
 
 """
@@ -777,14 +763,12 @@ end
 """
 function GetDimensionsCount(api::OrtApi, o::OrtTensorTypeAndShapeInfo)::Csize_t
     p_out = Ref{Csize_t}()
-    GC.@preserve o begin
-        status = @ccall $(api.GetDimensionsCount)(
-            o.ptr::Ptr{Cvoid},
-            p_out::Ptr{Csize_t},
-        )::OrtStatusPtr
-        check_and_release(api, status)
-        p_out[]
-    end
+    status = @ccall $(api.GetDimensionsCount)(
+        o::Ptr{Cvoid},
+        p_out::Ptr{Csize_t},
+    )::OrtStatusPtr
+    check_and_release(api, status)
+    p_out[]
 end
 
 """
@@ -796,15 +780,13 @@ function GetDimensions(
     ndims = GetDimensionsCount(api, o),
 )::Vector{Int64}
     out = Vector{Int64}(undef, ndims)
-    GC.@preserve out o begin
-        status = @ccall $(api.GetDimensions)(
-            o.ptr::Ptr{Cvoid},
-            pointer(out)::Ptr{Int64},
-            ndims::Csize_t,
-        )::OrtStatusPtr
-        check_and_release(api, status)
-        return out
-    end
+    status = @ccall $(api.GetDimensions)(
+        o::Ptr{Cvoid},
+        out::Ptr{Int64},
+        ndims::Csize_t,
+    )::OrtStatusPtr
+    check_and_release(api, status)
+    return out
 end
 
 """
@@ -814,7 +796,7 @@ function GetTensorTypeAndShape(api::OrtApi, o::OrtValue)::OrtTensorTypeAndShapeI
     p_ptr = Ref(C_NULL)
     gchandles = Any[api, o]
     status = @ccall $(api.GetTensorTypeAndShape)(
-        o.ptr::Ptr{Cvoid},
+        o::Ptr{Cvoid},
         p_ptr::Ptr{Ptr{Cvoid}},
     )::OrtStatusPtr
     into_julia(OrtTensorTypeAndShapeInfo, api, p_ptr, status, gchandles)
@@ -850,13 +832,12 @@ function CreateTensorWithDataAsOrtValue(
     #   _Outptr_ OrtValue** out
     # )
     gchandles = [data, memory_info, shapevec]
-    info::Ptr{Cvoid} = memory_info.ptr
     p_data::Ptr{Cvoid} = pointer(data)
     p_data_len::Csize_t = length(data) * sizeof(eltype(data))
     shape::Ptr{Int64} = pointer(shapevec)
     shape_len::Csize_t = length(shapevec)
     status = @ccall $(api.CreateTensorWithDataAsOrtValue)(
-        info::Ptr{Cvoid},
+        memory_info::Ptr{Cvoid},
         p_data::Ptr{Cvoid},
         p_data_len::Csize_t,
         shape::Ptr{Int64},
@@ -875,12 +856,10 @@ After `tensor` is released, accessing the output becomes undefined behaviour.
 """
 function unsafe_GetTensorMutableData(api::OrtApi, tensor::OrtValue)
     p_ptr = Ref(C_NULL)
-    GC.@preserve tensor begin
-        status = @ccall $(api.GetTensorMutableData)(
-            tensor.ptr::Ptr{Cvoid},
-            p_ptr::Ptr{Ptr{Cvoid}},
-        )::OrtStatusPtr
-    end
+    status = @ccall $(api.GetTensorMutableData)(
+        tensor::Ptr{Cvoid},
+        p_ptr::Ptr{Ptr{Cvoid}},
+    )::OrtStatusPtr
     check_and_release(api, status)
     info = GetTensorTypeAndShape(api, tensor)
     ONNX_type = GetTensorElementType(api, info)
@@ -951,7 +930,7 @@ function Run(
     end
     GC.@preserve gchandles begin
         status = @ccall $(api.Run)(
-            session.ptr::Ptr{Cvoid},
+            session::Ptr{Cvoid},
             run_options_ptr::Ptr{Cvoid}, # TODO
             _input_names::Ptr{Cstring},
             _inputs::Ptr{Ptr{Cvoid}},
@@ -985,14 +964,12 @@ function CreateArenaCfgV2(api::OrtApi, keys, vals)::OrtArenaCfg
     vals = _collect(Csize_t, vals)
     num_keys = length(keys)
     p_ptr = Ref(C_NULL)
-    GC.@preserve keys vals begin
-        status = @ccall $(api.CreateArenaCfgV2)(
-            pointer(keys)::Ptr{Cstring},
-            pointer(vals)::Ptr{Csize_t},
-            num_keys::Csize_t,
-            p_ptr::Ptr{Ptr{Cvoid}},
-        )::OrtStatusPtr
-    end
+    status = @ccall $(api.CreateArenaCfgV2)(
+        keys::Ptr{Cstring},
+        vals::Ptr{Csize_t},
+        num_keys::Csize_t,
+        p_ptr::Ptr{Ptr{Cvoid}},
+    )::OrtStatusPtr
     gchandles = Any[]
     into_julia(OrtArenaCfg, api, p_ptr, status, gchandles)
 end
@@ -1051,14 +1028,12 @@ function SessionOptionsAppendExecutionProvider_CUDA(
     session_options::OrtSessionOptions,
     cuda_options::OrtCUDAProviderOptions,
 )::Nothing
-    cuda_options_ptr = Ref(cuda_options)
-    GC.@preserve cuda_options_ptr session_options begin
-        status = @ccall $(api.SessionOptionsAppendExecutionProvider_CUDA)(
-                session_options.ptr::Ptr{Cvoid},
-                cuda_options_ptr::Ptr{Cvoid},
-            )::OrtStatusPtr
-        check_and_release(api, status)
-    end
+    cuda_options_ref = Ref(cuda_options)
+    status = @ccall $(api.SessionOptionsAppendExecutionProvider_CUDA)(
+            session_options::Ptr{Cvoid},
+            cuda_options_ref::Ptr{Cvoid},
+        )::OrtStatusPtr
+    check_and_release(api, status)
 end
 
 ################################################################################
@@ -1071,7 +1046,7 @@ function SessionGetModelMetadata(api::OrtApi, session::OrtSession)::OrtModelMeta
     p_ptr = Ref(C_NULL)
     gchandles = Any[api, session]
     status = @ccall $(api.SessionGetModelMetadata)(
-        session.ptr::Ptr{Cvoid},
+        session::Ptr{Cvoid},
         p_ptr::Ptr{Ptr{Cvoid}},
     )::OrtStatusPtr
     into_julia(OrtModelMetadata, api, p_ptr, status, gchandles)
@@ -1085,13 +1060,11 @@ function _ModelMetadataGetString(
 )::String
     p_ptr = Ref{Cstring}(C_NULL)
     f = getproperty(api, name)
-    GC.@preserve api model_metadata allocator begin
-        status = @ccall $(f)(
-            model_metadata.ptr::Ptr{Cvoid},
-            allocator.ptr::Ptr{Cvoid},
-            p_ptr::Ptr{Cstring},
-        )::OrtStatusPtr
-    end
+    status = @ccall $(f)(
+        model_metadata::Ptr{Cvoid},
+        allocator::Ptr{Cvoid},
+        p_ptr::Ptr{Cstring},
+    )::OrtStatusPtr
     check_and_release(api, status)
     ret = unsafe_string(p_ptr[])
     Free(allocator, p_ptr[])
