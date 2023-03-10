@@ -381,7 +381,7 @@ for item in [
     if !(ReleaseObj in fieldnames(OrtApi))
         error("$ReleaseObj not in fieldnames(OrtApi)")
     end
-    @eval Base.cconvert(::Type{Ptr{Cvoid}}, obj::$OrtObj) = obj.ptr
+    @eval Base.unsafe_convert(::Type{Ptr{Cvoid}}, obj::$OrtObj) = obj.ptr
     @eval function $ReleaseObj(api::OrtApi, obj::$OrtObj)::Nothing
         if isalive(obj)
             ccall(api.$ReleaseObj, Cvoid, (Ptr{Cvoid},), obj.ptr)
