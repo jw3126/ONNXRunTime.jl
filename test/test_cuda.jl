@@ -2,7 +2,7 @@ module TestCUDA
 import CUDA
 using Test
 using ONNXRunTime
-const OX = ONNXRunTime
+const ORT = ONNXRunTime
 using ONNXRunTime: SessionOptionsAppendExecutionProvider_CUDA
 
 #using Libdl
@@ -10,10 +10,10 @@ using ONNXRunTime: SessionOptionsAppendExecutionProvider_CUDA
 
 @testset "CUDA high level" begin
     @testset "increment2x3.onnx" begin
-        path = OX.testdatapath("increment2x3.onnx")
-        model = OX.load_inference(path, execution_provider=:cuda)
-        @test OX.input_names(model) == ["input"]
-        @test OX.output_names(model) == ["output"]
+        path = ORT.testdatapath("increment2x3.onnx")
+        model = ORT.load_inference(path, execution_provider=:cuda)
+        @test ORT.input_names(model) == ["input"]
+        @test ORT.output_names(model) == ["output"]
         input = randn(Float32, 2,3)
         y = model((;input=input,), ["output"])
         @test y == (output=input .+ 1f0,)
@@ -34,9 +34,9 @@ using ONNXRunTime.CAPI
     mem = CreateCpuMemoryInfo(api)
     allocator = CreateAllocator(api, session, mem)
     @test SessionGetInputName(api, session, 0, allocator) == "input"
-    @test_throws OX.OrtException SessionGetInputName(api, session, 1, allocator)
+    @test_throws ORT.OrtException SessionGetInputName(api, session, 1, allocator)
     @test SessionGetOutputName(api, session, 0, allocator) == "output"
-    @test_throws OX.OrtException SessionGetOutputName(api, session, 1, allocator)
+    @test_throws ORT.OrtException SessionGetOutputName(api, session, 1, allocator)
     input_vec = randn(Float32, 6)
     input_array = [
         input_vec[1] input_vec[2] input_vec[3];
