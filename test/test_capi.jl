@@ -1,13 +1,13 @@
 module TestCAPI
 using Test
 using ONNXRunTime.CAPI
-import ONNXRunTime as OX
+import ONNXRunTime as ORT
 
 @testset "Session" begin
     @testset "increment2x3" begin
         api = GetApi()
         env = CreateEnv(api, name="myenv")
-        path = OX.testdatapath("increment2x3.onnx")
+        path = ORT.testdatapath("increment2x3.onnx")
         session_options = CreateSessionOptions(api)
         @test (sprint(show, session_options); true)
         @test_throws Exception CreateSession(api, env, "does_not_exits.onnx", session_options)
@@ -20,9 +20,9 @@ import ONNXRunTime as OX
         allocator = CreateAllocator(api, session, mem)
         @test (sprint(show, allocator); true)
         @test SessionGetInputName(api, session, 0, allocator) == "input"
-        @test_throws OX.OrtException SessionGetInputName(api, session, 1, allocator)
+        @test_throws ORT.OrtException SessionGetInputName(api, session, 1, allocator)
         @test SessionGetOutputName(api, session, 0, allocator) == "output"
-        @test_throws OX.OrtException SessionGetOutputName(api, session, 1, allocator)
+        @test_throws ORT.OrtException SessionGetOutputName(api, session, 1, allocator)
         input_vec = randn(Float32, 6)
         input_array = [
             input_vec[1] input_vec[2] input_vec[3];
@@ -46,7 +46,7 @@ import ONNXRunTime as OX
     @testset "increment2x3 ModelMetadata" begin
         api = GetApi()
         env = CreateEnv(api, name="myenv")
-        path = OX.testdatapath("increment2x3.onnx")
+        path = ORT.testdatapath("increment2x3.onnx")
         session_options = CreateSessionOptions(api)
         @test (sprint(show, session_options); true)
         @test_throws Exception CreateSession(api, env, "does_not_exits.onnx", session_options)
@@ -67,12 +67,12 @@ end
     api = GetApi()
     mem = CreateCpuMemoryInfo(api)
     data = randn(2,3)
-    tensor = CreateTensorWithDataAsOrtValue(api, mem, vec(OX.reversedims(data)), size(data))
+    tensor = CreateTensorWithDataAsOrtValue(api, mem, vec(ORT.reversedims(data)), size(data))
     @test IsTensor(api, tensor)
     info = GetTensorTypeAndShape(api, tensor)
     onnxelty = GetTensorElementType(api, info)
     @test onnxelty isa ONNXTensorElementDataType
-    @test OX.juliatype(onnxelty) == eltype(data)
+    @test ORT.juliatype(onnxelty) == eltype(data)
     @test GetDimensionsCount(api, info) == 2
     @test GetDimensions(api, info) == [2,3]
     data2 = GetTensorMutableData(api, tensor)

@@ -14,11 +14,11 @@ Contributions are welcome.
 The high level API works as follows:
 ```julia
 
-julia> import ONNXRunTime as OX
+julia> import ONNXRunTime as ORT
 
-julia> path = OX.testdatapath("increment2x3.onnx"); # path to a toy model
+julia> path = ORT.testdatapath("increment2x3.onnx"); # path to a toy model
 
-julia> model = OX.load_inference(path);
+julia> model = ORT.load_inference(path);
 
 julia> input = Dict("input" => randn(Float32,2,3))
 Dict{String, Matrix{Float32}} with 1 entry:
@@ -34,7 +34,7 @@ pkg> add CUDA
 
 julia> import CUDA
 
-julia> OX.load_inference(path, execution_provider=:cuda)
+julia> ORT.load_inference(path, execution_provider=:cuda)
 ```
 
 The low level API mirrors the offical [C-API](https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347). The above example looks like this:
