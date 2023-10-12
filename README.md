@@ -28,11 +28,23 @@ julia> model(input)
 Dict{String, Matrix{Float32}} with 1 entry:
   "output" => [2.68127 2.18192 0.525979; -0.135185 2.02199 3.75168]
 ```
-For GPU usage simply do:
+
+For GPU usage the CUDA and cuDNN packages are required and the CUDA
+runtime needs to be set to 11.8 or a later 11.x version. To set this
+up, do
+
 ```julia
-pkg> add CUDA
+pkg> add CUDA cuDNN
 
 julia> import CUDA
+
+julia> CUDA.set_runtime_version!(v"11.8")
+```
+
+Then GPU inference is simply
+
+```julia
+julia> import CUDA, cuDNN
 
 julia> ORT.load_inference(path, execution_provider=:cuda)
 ```
@@ -63,3 +75,54 @@ output_array = GetTensorMutableData(api, output_tensor);
 * Use the onnxruntime python bindings via [PyCall.jl](https://github.com/JuliaPy/PyCall.jl).
 * [ONNX.jl](https://github.com/FluxML/ONNX.jl)
 * [ONNXNaiveNASflux.jl](https://github.com/DrChainsaw/ONNXNaiveNASflux.jl)
+
+# Breaking Changes in version 1.0.
+
+* Support for CUDA.jl is changed from version 3 to versions 4 and 5.
+
+* Support for Julia versions less than 1.9 is dropped. The reason for
+  this is to switch the conditional support of GPUs from being based
+  on the Requires package to being a package extension. As a
+  consequence the ONNXRunTime GPU support can now be precompiled and
+  the CUDA.jl versions can be properly controlled via Compat.
+
+# Setting the CUDA Runtime Version in Tests
+
+For GPU tests using ONNXRunTime, naturally the tests must depend on
+and import CUDA and cuDNN. Additionally a supported CUDA runtime
+version needs to be used, which can be somewhat tricky to set up for
+the tests.
+
+First some background. What `CUDA.set_runtime_version!(v"11.8")`
+effectively does is to
+
+1. Add a `LocalPreferences.toml` file containing
+
+```
+[CUDA_Runtime_jll]
+version = "11.8"
+```
+
+2. In `Project.toml`, add
+```
+[extras]
+CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"
+```
+
+If your test environment is defined by a `test` target in the top
+`Project.toml` you need to
+
+1. Add a `LocalPreferences.toml` in your top directory with the same
+contents as above.
+
+2. Add `CUDA_Runtime_jll` to the `extras` section of `Project.toml`.
+
+3. Add `CUDA_Runtime_jll` to the `test` target of `Project.toml`.
+
+If your test environment is defined by a `Project.toml` in the `test`
+directory, you instead need to
+
+1. Add a `test/LocalPreferences.toml` file with the same contents as
+above.
+
+2. Add `CUDA_Runtime_jll` to the `extras` section of `test/Project.toml`.
