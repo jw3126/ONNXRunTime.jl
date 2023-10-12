@@ -1,4 +1,4 @@
-# This file is not included from `runtests.jl` nor run in CI.
+# This file is neither included from `runtests.jl` nor run in CI.
 #
 # Run it with `julia tests/test_cuda_extension.jl`. This requires that
 # Julia is installed with juliaup and will involve downloading of a
@@ -17,7 +17,6 @@ if !juliaup_found
     error("`juliaup` needs to be installed for the CUDA extension tests")
 end
 
-wait(run(`juliaup add 1.6`, wait = false))
 wait(run(`juliaup add 1.9`, wait = false))
 
 package_path = dirname(@__DIR__)
