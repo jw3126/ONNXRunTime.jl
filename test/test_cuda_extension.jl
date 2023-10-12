@@ -39,35 +39,6 @@ function with_environment(f::Function; cuda_runtime_version)
     end
 end
 
-@testset "Julia 1.6 CUDA 3" begin
-    with_environment(cuda_runtime_version = "11.8") do env
-        install_script = """
-                         using Pkg
-                         Pkg.develop(path = "$(package_path)")
-                         Pkg.add(name = "CUDA", version = "3")
-                         """
-        @test success(run(`julia +1.6 --project=$(env) -e "$(install_script)"`))
-        # Correct dependency for :cuda.
-        test_script = """
-                      using ONNXRunTime, CUDA
-                      load_inference("$(onnx_path)", execution_provider = :cuda)
-                      """
-        @test success(run(`julia +1.6 --project=$(env) -e "$(test_script)"`))
-        # CUDA not loaded.
-        test_script = """
-                      using ONNXRunTime
-                      load_inference("$(onnx_path)", execution_provider = :cuda)
-                      """
-        @test_throws ProcessFailedException run(`julia +1.6 --project=$(env) -e "$(test_script)"`)
-        # CUDA not loaded but running on CPU, so it's fine.
-        test_script = """
-                      using ONNXRunTime
-                      load_inference("$(onnx_path)", execution_provider = :cpu)
-                      """
-        @test success(run(`julia +1.6 --project=$(env) -e "$(test_script)"`))
-    end
-end
-
 @testset "Julia 1.9 CUDA 3" begin
     with_environment(cuda_runtime_version = "11.8") do env
         install_script = """

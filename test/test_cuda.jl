@@ -1,5 +1,6 @@
 module TestCUDA
 import CUDA
+import cuDNN
 using Test
 using ONNXRunTime
 const ORT = ONNXRunTime
