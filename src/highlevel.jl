@@ -74,18 +74,13 @@ function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
             error("""
             The $(repr(execution_provider)) execution provider requires CUDA to be functional. See `CUDA.functional`.
             """)
-        elseif !(v"11.8" <= getfield(CUDAExt, :cuda_runtime_version)() < v"12")
-            # Note: The supported version range is a property
-            # inherited from the CUDA runtime library and needs to
-            # be updated when the library is updated. It may be a
-            # good idea to centralize this information somewhere.
-            #
-            # Only warning here since it's plausible that it might
-            # work with some lower 11.x versions than officially
-            # supported.
-            @warn """
-            The $(repr(execution_provider)) execution provider requires a CUDA runtime version of at least 11.8 but less than 12. See `CUDA.set_runtime_version!`.
-            """
+        else
+            cuda_runtime_version = getfield(CUDAExt, :cuda_runtime_version)()
+            if !(cuda_runtime_supported_version <= cuda_runtime_version < cuda_runtime_upper_bound)
+                error("""
+                Found CUDA runtime version $(cuda_runtime_version). The $(repr(execution_provider)) execution provider requires a CUDA runtime version of at least $(cuda_runtime_supported_version) but less than $(cuda_runtime_upper_bound). See `CUDA.set_runtime_version!` and the package README.
+                """)
+            end
         end
         session_options = CreateSessionOptions(api)
         cuda_options = OrtCUDAProviderOptions()

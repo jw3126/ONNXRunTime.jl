@@ -108,28 +108,8 @@ end
     end
 end
 
-@testset "Julia 1.9 CUDA.jl $(cuda_version) CUDA runtime 11.6" for cuda_version in (4, 5)
-    with_environment(cuda_runtime_version = "11.6") do env
-        install_script = """
-                         using Pkg
-                         Pkg.develop(path = "$(package_path)")
-                         Pkg.add(name = "CUDA", version = "$(cuda_version)")
-                         Pkg.add(name = "cuDNN")
-                         """
-        @test success(run(`julia +1.9 --project=$(env) -e "$(install_script)"`))
-        # Correct dependencies for :cuda. CUDA runtime version is
-        # lower than officially supported but close enough to at least
-        # load so there will be a warning but no error.
-        test_script = """
-                      using ONNXRunTime, CUDA, cuDNN
-                      load_inference("$(onnx_path)", execution_provider = :cuda)
-                      """
-        @test success(run(`julia +1.9 --project=$(env) -e "$(test_script)"`))
-    end
-end
-
-@testset "Julia 1.9 CUDA.jl $(cuda_version) CUDA runtime 12.1" for cuda_version in (4, 5)
-    with_environment(cuda_runtime_version = "12.1") do env
+@testset "Julia 1.9 CUDA.jl $(cuda_version) CUDA runtime $(cuda_runtime_version)" for cuda_version in (4, 5), cuda_runtime_version in ("11.6", "12.1")
+    with_environment(; cuda_runtime_version) do env
         install_script = """
                          using Pkg
                          Pkg.develop(path = "$(package_path)")

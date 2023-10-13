@@ -10,6 +10,7 @@ function reversedims_lazy(arr)
     PermutedDimsArray(arr, _perm(arr))
 end
 
+include("versions.jl")
 include("capi.jl")
 include("highlevel.jl")
 
