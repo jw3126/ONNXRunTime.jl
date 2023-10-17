@@ -65,10 +65,22 @@ function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
     if execution_provider === :cpu
         session_options = CreateSessionOptions(api)
     elseif execution_provider === :cuda
-        if !(isdefined(@__MODULE__, :CUDA))
-            @warn """
-            The $(repr(execution_provider)) requires the CUDA.jl package to be available. Try adding `import CUDA` to your code.
-            """
+        CUDAExt = Base.get_extension(@__MODULE__, :CUDAExt)
+        if isnothing(CUDAExt)
+            error("""
+            The $(repr(execution_provider)) execution provider requires the CUDA.jl and cuDNN.jl packages to be available. Try adding `import CUDA, cuDNN` to your code.
+            """)
+        elseif !getfield(CUDAExt, :cuda_functional)()
+            error("""
+            The $(repr(execution_provider)) execution provider requires CUDA to be functional. See `CUDA.functional`.
+            """)
+        else
+            cuda_runtime_version = getfield(CUDAExt, :cuda_runtime_version)()
+            if !(cuda_runtime_supported_version <= cuda_runtime_version < cuda_runtime_upper_bound)
+                error("""
+                Found CUDA runtime version $(cuda_runtime_version). The $(repr(execution_provider)) execution provider requires a CUDA runtime version of at least $(cuda_runtime_supported_version) but less than $(cuda_runtime_upper_bound). See `CUDA.set_runtime_version!` and the package README.
+                """)
+            end
         end
         session_options = CreateSessionOptions(api)
         cuda_options = OrtCUDAProviderOptions()
