@@ -158,6 +158,7 @@ using ONNXRunTime: juliatype
         y = model((;input))
         release(model)
         @test_throws ErrorException y = model((;input))
+        @test_throws "Session has been released and can no longer be called." y = model((;input))
     end
 end
 

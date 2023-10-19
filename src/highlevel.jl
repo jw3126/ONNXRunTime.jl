@@ -146,6 +146,7 @@ function (o::InferenceSession)(
                                inputs,
                                output_names=nothing
                               )
+    isalive(o) || error("Session has been released and can no longer be called.")
     if output_names === nothing
         output_names = @__MODULE__().output_names(o)
     end
@@ -174,7 +175,6 @@ function (o::InferenceSession)(
             throw(ArgumentError(msg))
         end
     end
-    isalive(o) || error("Session has been released and can no longer be called.")
     inp_names, input_tensors = prepare_inputs(o, inputs)
     run_options    = nothing
     output_tensors = Run(o.api, o.session, run_options, inp_names, input_tensors, output_names)
