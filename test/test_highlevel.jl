@@ -151,6 +151,14 @@ using ONNXRunTime: juliatype
         @test out.x_plus_1  ≈ x .+ 1
         @test out.y_plus_2  ≈ y .+ 2
     end
+    @testset "Release session" begin
+        path = ORT.testdatapath("increment2x3.onnx")
+        model = ORT.load_inference(path, execution_provider=:cpu)
+        input = randn(Float32, 2, 3)
+        y = model((;input))
+        release(model)
+        @test_throws ErrorException y = model((;input))
+    end
 end
 
 
