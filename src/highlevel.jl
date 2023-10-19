@@ -12,7 +12,7 @@ end
 
 using .CAPI
 using .CAPI: juliatype, EXECUTION_PROVIDERS
-export InferenceSession, load_inference
+export InferenceSession, load_inference, release
 
 """
     $TYPEDEF
@@ -146,6 +146,7 @@ function (o::InferenceSession)(
                                inputs,
                                output_names=nothing
                               )
+    isalive(o) || error("Session has been released and can no longer be called.")
     if output_names === nothing
         output_names = @__MODULE__().output_names(o)
     end
@@ -179,3 +180,25 @@ function (o::InferenceSession)(
     output_tensors = Run(o.api, o.session, run_options, inp_names, input_tensors, output_names)
     make_output(o, inputs, output_names, output_tensors)
 end
+
+"""
+    release(o::InferenceSession)::Nothing
+
+Release memory allocated to an [`InferenceSession`](@ref). This also
+happens automatically when the object has gone out of scope and the
+garbage collector deletes it.
+
+However, there is no guarantee when that happens, so it can be useful
+to manually release the memory. This is especially true when the model
+has allocated GPU memory, which does not put pressure on the garbage
+collector to run promptly.
+
+Using the inference session after releasing is an error.
+"""
+function release(o::InferenceSession)
+    CAPI.release(o.api, o.session)
+    CAPI.release(o.api, o.meminfo)
+    CAPI.release(o.api, o.allocator)
+end
+
+isalive(o::InferenceSession) = all(CAPI.isalive, (o.session, o.meminfo, o.allocator))

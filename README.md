@@ -49,6 +49,10 @@ julia> import CUDA, cuDNN
 julia> ORT.load_inference(path, execution_provider=:cuda)
 ```
 
+Memory allocated by a model is eventually automatically released after
+it goes out of scope, when the model object is deleted by the garbage
+collector. It can also be immediately released with `release(model)`.
+
 The low level API mirrors the offical [C-API](https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347). The above example looks like this:
 ```julia
 using ONNXRunTime.CAPI
