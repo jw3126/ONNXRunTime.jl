@@ -77,6 +77,7 @@ end
                       using ONNXRunTime
                       load_inference("$(onnx_path)", execution_provider = :cpu)
                       """
+        @test success(run(`julia +1.9 --project=$(env) -e "$(test_script)"`))
         # CUDA not loaded. Well, cuDNN pulls in CUDA so this passes anyway.
         test_script = """
                       using ONNXRunTime
