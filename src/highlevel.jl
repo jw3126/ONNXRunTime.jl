@@ -2,6 +2,7 @@ using ArgCheck
 using LazyArtifacts
 using DataStructures: OrderedDict
 using DocStringExtensions
+import CEnum
 ################################################################################
 ##### testdatapath
 ################################################################################
@@ -59,10 +60,16 @@ end
 """
 function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
         envname::AbstractString="defaultenv",
+        provider_options::NamedTuple=(;)
     )::InferenceSession
     api = GetApi(;execution_provider)
     env = CreateEnv(api, name=envname)
     if execution_provider === :cpu
+        if !isempty(provider_options)
+            error("""
+            No provider options are supported for the CPU execution provider.
+            """)
+        end
         session_options = CreateSessionOptions(api)
     elseif execution_provider === :cuda
         CUDAExt = Base.get_extension(@__MODULE__, :CUDAExt)
@@ -83,7 +90,18 @@ function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
             end
         end
         session_options = CreateSessionOptions(api)
-        cuda_options = OrtCUDAProviderOptions()
+        cuda_options_dict = Dict{Symbol, Any}(pairs(provider_options))
+        if haskey(cuda_options_dict, :cudnn_conv_algo_search)
+            # Look up enum values.
+            value = cuda_options_dict[:cudnn_conv_algo_search]
+            if value ∉ first.(CEnum.name_value_pairs(CAPI.OrtCudnnConvAlgoSearch))
+                error("""
+                $(value) is not a valid value for :cudnn_conv_algo_search.
+                """)
+            end
+            cuda_options_dict[:cudnn_conv_algo_search] = getfield(CAPI, value)
+        end
+        cuda_options = OrtCUDAProviderOptions(; cuda_options_dict...)
         SessionOptionsAppendExecutionProvider_CUDA(api, session_options, cuda_options)
     else
         error("Unsupported execution_provider $execution_provider")

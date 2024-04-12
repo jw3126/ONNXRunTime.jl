@@ -49,6 +49,12 @@ julia> import CUDA, cuDNN
 julia> ORT.load_inference(path, execution_provider=:cuda)
 ```
 
+CUDA provider options can be specified
+```
+julia> ORT.load_inference(path, execution_provider=:cuda,
+                          provider_options=(;cudnn_conv_algo_search=:HEURISTIC))
+```
+
 Memory allocated by a model is eventually automatically released after
 it goes out of scope, when the model object is deleted by the garbage
 collector. It can also be immediately released with `release(model)`.
