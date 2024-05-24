@@ -1,7 +1,7 @@
 name = "ONNXRunTime"
 uuid = "e034b28e-924e-41b2-b98f-d2bbeb830c6a"
 authors = ["Jan Weidner <jw3126@gmail.com> and contributors"]
-version = "1.1.0"
+version = "1.1.1"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -14,7 +14,7 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [compat]
 ArgCheck = "2"
-CEnum = "0.4"
+CEnum = "0.4, 0.5"
 CUDA = "4, 5"
 DataStructures = "0.18"
 DocStringExtensions = "0.8, 0.9"
