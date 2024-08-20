@@ -86,6 +86,12 @@ output_array = GetTensorMutableData(api, output_tensor);
 * [ONNX.jl](https://github.com/FluxML/ONNX.jl)
 * [ONNXNaiveNASflux.jl](https://github.com/DrChainsaw/ONNXNaiveNASflux.jl)
 
+# Complements
+
+* [ONNXLowLevel.jl](https://github.com/GunnarFarneback/ONNXLowLevel.jl) cannot
+  run inference but can be used to investigate, create, or manipulate ONNX
+  files.
+
 # Breaking Changes in version 0.4.
 
 * Support for CUDA.jl is changed from version 3 to versions 4 and 5.
