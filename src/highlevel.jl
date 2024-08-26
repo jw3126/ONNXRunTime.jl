@@ -55,15 +55,42 @@ function output_names(api::OrtApi, session::OrtSession, allocator::OrtAllocator)
     end
 end
 
+function parse_logging_level(level::Symbol)
+    level == :warning && return CAPI.ORT_LOGGING_LEVEL_WARNING
+    level == :verbose && return CAPI.ORT_LOGGING_LEVEL_VERBOSE
+    level == :info && return CAPI.ORT_LOGGING_LEVEL_INFO
+    level == :error && return CAPI.ORT_LOGGING_LEVEL_ERROR
+    level == :fatal && return CAPI.ORT_LOGGING_LEVEL_FATAL
+    error("""
+    $(level) is not a valid value for logging_level. The options are :verbose, :info, :warning (default), :error, and :fatal.
+    """)
+end
+
 """
     $TYPEDSIGNATURES
+
+Load an ONNX file at `path` into an inference session.
+
+*Keyword arguments:*
+* `execution_provider`: Either `:cpu` or `:cuda`. The latter requires a
+  CUDA capable GPU and the `CUDA` and `cuDNN` packages must first be imported.
+* `envname`: Name used for logging purposes.
+* `logging_level`: Level of diagnostic output. Options are `:verbose`,
+  `:info`, `:warning` (default), `:error`, and `:fatal`.
+* `provider_options`: Named tuple with options passed to the execution
+  provider.
+
+Note: Due to limitations of the C API `CreateEnv` function, `envname`
+and `logging_level` can only be set once per process. Attempts to
+change these are ignored.
 """
 function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
         envname::AbstractString="defaultenv",
+        logging_level::Symbol=:warning,
         provider_options::NamedTuple=(;)
     )::InferenceSession
     api = GetApi(;execution_provider)
-    env = CreateEnv(api, name=envname)
+    env = CreateEnv(api, name=envname, logging_level=parse_logging_level(logging_level))
     if execution_provider === :cpu
         if !isempty(provider_options)
             error("""
