@@ -1,15 +1,16 @@
 [[onnxruntime_cpu]]
 arch = "x86_64"
-git-tree-sha1 = "8537307691275bdf5dd2c646e3775649643ccecf"
+git-tree-sha1 = "7a5a70a99ed5931ff451b6e70a29944cd3d4b54d"
 lazy = true
 os = "windows"
 
     [[onnxruntime_cpu.download]]
-    sha256 = "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+    sha256 = "78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581"
     url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-win-x64-1.20.1.tgz"
+
 [[onnxruntime_cpu]]
 arch = "x86_64"
-git-tree-sha1 = "f449f6728afcfc4e1d18a33685f337de62732011"
+git-tree-sha1 = "7a5a70a99ed5931ff451b6e70a29944cd3d4b54d"
 lazy = true
 libc = "glibc"
 os = "linux"
@@ -17,18 +18,20 @@ os = "linux"
     [[onnxruntime_cpu.download]]
     sha256 = "67db4dc1561f1e3fd42e619575c82c601ef89849afc7ea85a003abbac1a1a105"
     url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-x64-1.20.1.tgz"
+
 [[onnxruntime_cpu]]
 arch = "x86_64"
-git-tree-sha1 = "e83647aba10d99e20321ad123cb92974fee357dc"
+git-tree-sha1 = "4652621efdd6d8c61987734403a7e7e1fff19079"
 lazy = true
 os = "macos"
 
     [[onnxruntime_cpu.download]]
     sha256 = "da4349e01a7e997f5034563183c7183d069caadc1d95f499b560961787813efd"
     url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-osx-universal2-1.20.1.tgz"
+
 [[onnxruntime_cpu]]
 arch = "aarch64"
-git-tree-sha1 = "3aaa741ff710a21c23370cda7d967939dfc82e6a"
+git-tree-sha1 = "9f203a6745ce1e17f0afb8528688b95d1791d851"
 lazy = true
 os = "macos"
 
@@ -38,16 +41,17 @@ os = "macos"
 
 [[onnxruntime_gpu]]
 arch = "x86_64"
-git-tree-sha1 = "09c70e5af145d9c84cada2cbda13ff07e18a1dbc"
+git-tree-sha1 = "478f998b8d737218ef0cc06d26e91288d1e72f3b"
 lazy = true
 os = "windows"
 
     [[onnxruntime_gpu.download]]
     sha256 = "3e9658d4aa7c21b3f5cbb5a7ce0356184f3c183c317b52f9cfff23a3f079634e"
     url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-win-x64-gpu-1.20.1.zip"
+
 [[onnxruntime_gpu]]
 arch = "x86_64"
-git-tree-sha1 = "a6b97c24aaf0f98fb899dc4cb4e076fb4e3bf2a8"
+git-tree-sha1 = "478f998b8d737218ef0cc06d26e91288d1e72f3b"
 lazy = true
 libc = "glibc"
 os = "linux"
