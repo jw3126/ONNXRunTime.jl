@@ -30,7 +30,7 @@ Dict{String, Matrix{Float32}} with 1 entry:
 ```
 
 For GPU usage the CUDA and cuDNN packages are required and the CUDA
-runtime needs to be set to 11.8 or a later 11.x version. To set this
+runtime needs to be set to 12.0 or a later 12.x version. To set this
 up, do
 
 ```julia
@@ -38,7 +38,7 @@ pkg> add CUDA cuDNN
 
 julia> import CUDA
 
-julia> CUDA.set_runtime_version!(v"11.8")
+julia> CUDA.set_runtime_version!(v"12.0")
 ```
 
 Then GPU inference is simply
@@ -109,14 +109,14 @@ and import CUDA and cuDNN. Additionally a supported CUDA runtime
 version needs to be used, which can be somewhat tricky to set up for
 the tests.
 
-First some background. What `CUDA.set_runtime_version!(v"11.8")`
+First some background. What `CUDA.set_runtime_version!(v"12.0")`
 effectively does is to
 
 1. Add a `LocalPreferences.toml` file containing
 
 ```
 [CUDA_Runtime_jll]
-version = "11.8"
+version = "12.0"
 ```
 
 2. In `Project.toml`, add
