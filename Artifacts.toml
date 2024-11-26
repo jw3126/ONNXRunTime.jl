@@ -1,13 +1,12 @@
 [[onnxruntime_cpu]]
 arch = "x86_64"
-git-tree-sha1 = "7a5a70a99ed5931ff451b6e70a29944cd3d4b54d"
+git-tree-sha1 = "03ca4920f8c66efacaa58cdb30ee6da83b7a40e0"
 lazy = true
 os = "windows"
 
     [[onnxruntime_cpu.download]]
-    sha256 = "78d447051e48bd2e1e778bba378bec4ece11191c9e538cf7b2c4a4565e8f5581"
-    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-win-x64-1.20.1.tgz"
-
+    sha256 = "0dbe0bb59e2c000d9b331d1dfd2a61a7af2cfea1d5391d369fcd8d3ea504b3b8"
+    url = "https://github.com/jw3126/ONNXRunTimeArtifacts/releases/download/v1.20.1-rc1/onnxruntime-win-x64-1.20.1.tgz"
 [[onnxruntime_cpu]]
 arch = "x86_64"
 git-tree-sha1 = "7a5a70a99ed5931ff451b6e70a29944cd3d4b54d"
@@ -18,7 +17,6 @@ os = "linux"
     [[onnxruntime_cpu.download]]
     sha256 = "67db4dc1561f1e3fd42e619575c82c601ef89849afc7ea85a003abbac1a1a105"
     url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-x64-1.20.1.tgz"
-
 [[onnxruntime_cpu]]
 arch = "x86_64"
 git-tree-sha1 = "4652621efdd6d8c61987734403a7e7e1fff19079"
@@ -28,27 +26,25 @@ os = "macos"
     [[onnxruntime_cpu.download]]
     sha256 = "da4349e01a7e997f5034563183c7183d069caadc1d95f499b560961787813efd"
     url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-osx-universal2-1.20.1.tgz"
-
 [[onnxruntime_cpu]]
 arch = "aarch64"
-git-tree-sha1 = "9f203a6745ce1e17f0afb8528688b95d1791d851"
+git-tree-sha1 = "4652621efdd6d8c61987734403a7e7e1fff19079"
 lazy = true
 os = "macos"
 
     [[onnxruntime_cpu.download]]
-    sha256 = "b678fc3c2354c771fea4fba420edeccfba205140088334df801e7fc40e83a57a"
-    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-osx-arm64-1.20.1.tgz"
+    sha256 = "da4349e01a7e997f5034563183c7183d069caadc1d95f499b560961787813efd"
+    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-osx-universal2-1.20.1.tgz"
 
 [[onnxruntime_gpu]]
 arch = "x86_64"
-git-tree-sha1 = "478f998b8d737218ef0cc06d26e91288d1e72f3b"
+git-tree-sha1 = "9740e9c731f3aeaa8ea93e25a787e91cf8f64bd7"
 lazy = true
 os = "windows"
 
     [[onnxruntime_gpu.download]]
-    sha256 = "3e9658d4aa7c21b3f5cbb5a7ce0356184f3c183c317b52f9cfff23a3f079634e"
-    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-win-x64-gpu-1.20.1.zip"
-
+    sha256 = "622828adb36268ce58d69eade91827d92354388f6e6a3be777fffe54acab84a2"
+    url = "https://github.com/jw3126/ONNXRunTimeArtifacts/releases/download/v1.20.1-rc1/onnxruntime-win-x64-gpu-1.20.1.tgz"
 [[onnxruntime_gpu]]
 arch = "x86_64"
 git-tree-sha1 = "478f998b8d737218ef0cc06d26e91288d1e72f3b"
