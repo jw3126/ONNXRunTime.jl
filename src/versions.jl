@@ -16,6 +16,6 @@
 #   is *not* accepted. Presumably CUDA runtime follows semantic
 #   versioning so this can automatically be set to the next major
 #   version.
-const onnxruntime_version = v"1.20.1"
+const onnxruntime_version = v"1.20.2"
 const cuda_runtime_supported_version = v"12.0"
 const cuda_runtime_upper_bound = VersionNumber(cuda_runtime_supported_version.major + 1)
