@@ -1,6 +1,5 @@
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
-*.Identifier
 /Manifest.toml
 /docs/build/
