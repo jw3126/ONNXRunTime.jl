@@ -15,10 +15,16 @@ using .CAPI
 using .CAPI: juliatype, EXECUTION_PROVIDERS
 export InferenceSession, load_inference, release
 
+# Interaction point with the CUDA extension. These values will be
+# updated by the extension when it is loaded.
+const cuda_is_loaded = Ref(false)
+const cuda_is_functional = Ref(false)
+const cuda_runtime_version = Ref(v"0.0.0")
+
 """
     $TYPEDEF
 
-Represents an infernence session. Should only be created by calling [`load_inference`](@ref).
+Represents an inference session. Should only be created by calling [`load_inference`](@ref).
 """
 struct InferenceSession
     api::OrtApi
@@ -99,20 +105,18 @@ function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
         end
         session_options = CreateSessionOptions(api)
     elseif execution_provider === :cuda
-        CUDAExt = Base.get_extension(@__MODULE__, :CUDAExt)
-        if isnothing(CUDAExt)
+        if !cuda_is_loaded[]
             error("""
             The $(repr(execution_provider)) execution provider requires the CUDA.jl and cuDNN.jl packages to be available. Try adding `import CUDA, cuDNN` to your code.
             """)
-        elseif !getfield(CUDAExt, :cuda_functional)()
+        elseif !cuda_is_functional[]
             error("""
             The $(repr(execution_provider)) execution provider requires CUDA to be functional. See `CUDA.functional`.
             """)
         else
-            cuda_runtime_version = getfield(CUDAExt, :cuda_runtime_version)()
-            if !(cuda_runtime_supported_version <= cuda_runtime_version < cuda_runtime_upper_bound)
+            if !(cuda_runtime_supported_version <= cuda_runtime_version[] < cuda_runtime_upper_bound)
                 error("""
-                Found CUDA runtime version $(cuda_runtime_version). The $(repr(execution_provider)) execution provider requires a CUDA runtime version of at least $(cuda_runtime_supported_version) but less than $(cuda_runtime_upper_bound). See `CUDA.set_runtime_version!` and the package README.
+                Found CUDA runtime version $(cuda_runtime_version[]). The $(repr(execution_provider)) execution provider requires a CUDA runtime version of at least $(cuda_runtime_supported_version) but less than $(cuda_runtime_upper_bound). See `CUDA.set_runtime_version!` and the package README.
                 """)
             end
         end
