@@ -1,6 +1,6 @@
 using ArgCheck
 using LazyArtifacts
-using DataStructures: OrderedDict
+using OrderedCollections: OrderedDict
 using DocStringExtensions
 import CEnum
 ################################################################################
