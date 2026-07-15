@@ -160,6 +160,17 @@ using ONNXRunTime: juliatype
         @test_throws ErrorException y = model((;input))
         @test_throws "Session has been released and can no longer be called." y = model((;input))
     end
+    @testset "Miscellaneous functions" begin
+        x = fill(3)
+        y = [1, 2, 3]
+        z = [1 2 3; 4 5 6]
+        @test ORT.reversedims(x) == x
+        @test ORT.reversedims(y) == y
+        @test ORT.reversedims(z) == z'
+        @test ORT.reversedims_lazy(x) == x
+        @test ORT.reversedims_lazy(y) == y
+        @test ORT.reversedims_lazy(z) == z'
+    end
 end
 
 
