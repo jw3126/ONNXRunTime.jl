@@ -6,6 +6,9 @@ end
 function reversedims(arr)
     permutedims(arr, _perm(arr))
 end
+function reversedims(arr::AbstractArray{T,0}) where {T}
+    return arr
+end
 function reversedims_lazy(arr)
     PermutedDimsArray(arr, _perm(arr))
 end
