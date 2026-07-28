@@ -28,6 +28,16 @@ os = "macos"
     url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-osx-universal2-1.20.1.tgz"
 [[onnxruntime_cpu]]
 arch = "aarch64"
+git-tree-sha1 = "00edaa23e74caa32f34a8dfbf08101123627e8c3"
+lazy = true
+libc = "glibc"
+os = "linux"
+
+    [[onnxruntime_cpu.download]]
+    sha256 = "ae4fedbdc8c18d688c01306b4b50c63de3445cdf2dbd720e01a2fa3810b8106a"
+    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-aarch64-1.20.1.tgz"
+[[onnxruntime_cpu]]
+arch = "aarch64"
 git-tree-sha1 = "9f203a6745ce1e17f0afb8528688b95d1791d851"
 lazy = true
 os = "macos"
