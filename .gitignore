@@ -3,3 +3,7 @@
 *.jl.mem
 /Manifest.toml
 /docs/build/
+/update_artifacts/Manifest.toml
+/update_artifacts/build/
+# Clone of the artifact hosting repo, created by older versions of the update flow.
+/ONNXRunTimeArtifacts/
