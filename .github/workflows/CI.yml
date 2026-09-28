@@ -19,6 +19,14 @@ jobs:
           - windows-latest
         arch:
           - x64
+        exclude:
+          # Upstream no longer ships x86_64 macOS builds.
+          - os: macOS-latest
+            arch: x64
+        include:
+          - {version: '1.9', os: macOS-latest, arch: aarch64}
+          - {version: '1', os: macOS-latest, arch: aarch64}
+          - {version: 'nightly', os: macOS-latest, arch: aarch64}
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2

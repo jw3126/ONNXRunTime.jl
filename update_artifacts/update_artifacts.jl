@@ -18,7 +18,7 @@ using Tar: Tar
 using p7zip_jll: p7zip
 
 # The version to update to, unless one is passed on the command line.
-const DEFAULT_VERSION = v"1.20.1"
+const DEFAULT_VERSION = v"1.30.0"
 
 # Repository the repacked tarballs are released to. Upstream ships the
 # Windows builds as zip files, but Artifacts.jl only understands tarballs,
@@ -36,25 +36,23 @@ in `Artifacts.toml`. `download_name` is the asset name in the upstream
 onnxruntime release; `.zip` entries are repacked and rehosted by us.
 """
 function artifact_items(version)
+    # Upstream dropped x86_64 macOS builds in 1.24.
     [
         (artifact_name = "onnxruntime_cpu",
          download_name = "onnxruntime-win-x64-$version.zip",
          platform = Platform("x86_64", "windows")),
         (artifact_name = "onnxruntime_gpu",
-         download_name = "onnxruntime-win-x64-gpu-$version.zip",
+         download_name = "onnxruntime-win-x64-gpu_cuda12-$version.zip",
          platform = Platform("x86_64", "windows")),
         (artifact_name = "onnxruntime_cpu",
          download_name = "onnxruntime-linux-x64-$version.tgz",
          platform = Platform("x86_64", "linux")),
         (artifact_name = "onnxruntime_gpu",
-         download_name = "onnxruntime-linux-x64-gpu-$version.tgz",
+         download_name = "onnxruntime-linux-x64-gpu_cuda12-$version.tgz",
          platform = Platform("x86_64", "linux")),
         (artifact_name = "onnxruntime_cpu",
          download_name = "onnxruntime-linux-aarch64-$version.tgz",
          platform = Platform("aarch64", "linux")),
-        (artifact_name = "onnxruntime_cpu",
-         download_name = "onnxruntime-osx-universal2-$version.tgz",
-         platform = Platform("x86_64", "macos")),
         (artifact_name = "onnxruntime_cpu",
          download_name = "onnxruntime-osx-arm64-$version.tgz",
          platform = Platform("aarch64", "macos")),

@@ -1,67 +1,58 @@
 [[onnxruntime_cpu]]
 arch = "x86_64"
-git-tree-sha1 = "03ca4920f8c66efacaa58cdb30ee6da83b7a40e0"
+git-tree-sha1 = "89619656a59bbbde5db145c41788f5dd28aee3f9"
 lazy = true
 os = "windows"
 
     [[onnxruntime_cpu.download]]
-    sha256 = "d336d853490997ab82668911318a56afb942b5759ca10db71c38540d26618912"
-    url = "https://github.com/jw3126/ONNXRunTimeArtifacts/releases/download/v1.20.1-rc1/onnxruntime-win-x64-1.20.1.tgz"
+    sha256 = "401d8216d2695b62b6434a66d8fb3a370b2e0c25c2033959ba896d322cfc5064"
+    url = "https://github.com/jw3126/ONNXRunTimeArtifacts/releases/download/v1.30.0-rc1/onnxruntime-win-x64-1.30.0.tgz"
 [[onnxruntime_cpu]]
 arch = "x86_64"
-git-tree-sha1 = "7a5a70a99ed5931ff451b6e70a29944cd3d4b54d"
+git-tree-sha1 = "0a901361af6be518c9e3f8e639b53e435f3cdc82"
 lazy = true
 libc = "glibc"
 os = "linux"
 
     [[onnxruntime_cpu.download]]
-    sha256 = "67db4dc1561f1e3fd42e619575c82c601ef89849afc7ea85a003abbac1a1a105"
-    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-x64-1.20.1.tgz"
+    sha256 = "a5ed5a3cac51fbb2e90da632ae43d19212faaa20e76484e62bcb7c23ddb3b3fd"
+    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-linux-x64-1.30.0.tgz"
 [[onnxruntime_cpu]]
 arch = "aarch64"
-git-tree-sha1 = "00edaa23e74caa32f34a8dfbf08101123627e8c3"
+git-tree-sha1 = "b547835c25707d37e4d0a413db1226941376e7f2"
 lazy = true
 libc = "glibc"
 os = "linux"
 
     [[onnxruntime_cpu.download]]
-    sha256 = "ae4fedbdc8c18d688c01306b4b50c63de3445cdf2dbd720e01a2fa3810b8106a"
-    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-aarch64-1.20.1.tgz"
-[[onnxruntime_cpu]]
-arch = "x86_64"
-git-tree-sha1 = "4652621efdd6d8c61987734403a7e7e1fff19079"
-lazy = true
-os = "macos"
-
-    [[onnxruntime_cpu.download]]
-    sha256 = "da4349e01a7e997f5034563183c7183d069caadc1d95f499b560961787813efd"
-    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-osx-universal2-1.20.1.tgz"
+    sha256 = "e16a27a8ed330bbc698df7330b0cf56e722f354e3bcc92118682c74ef3c3e3da"
+    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-linux-aarch64-1.30.0.tgz"
 [[onnxruntime_cpu]]
 arch = "aarch64"
-git-tree-sha1 = "9f203a6745ce1e17f0afb8528688b95d1791d851"
+git-tree-sha1 = "8df32790cf854c49108a2731bc7bbddf396586ef"
 lazy = true
 os = "macos"
 
     [[onnxruntime_cpu.download]]
-    sha256 = "b678fc3c2354c771fea4fba420edeccfba205140088334df801e7fc40e83a57a"
-    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-osx-arm64-1.20.1.tgz"
+    sha256 = "6ebb5062a934537c352937821f9fe9718e7de1a2db1122a93dd363ffd53a7012"
+    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-osx-arm64-1.30.0.tgz"
 
 [[onnxruntime_gpu]]
 arch = "x86_64"
-git-tree-sha1 = "9740e9c731f3aeaa8ea93e25a787e91cf8f64bd7"
+git-tree-sha1 = "6f4fa8dab02e5e22603d17a496b48d7a7f3a65c3"
 lazy = true
 os = "windows"
 
     [[onnxruntime_gpu.download]]
-    sha256 = "036be280fc4d13b4962b2e26cf531c5c2626b4f9ca7c080fa82ccb00f8564fee"
-    url = "https://github.com/jw3126/ONNXRunTimeArtifacts/releases/download/v1.20.1-rc1/onnxruntime-win-x64-gpu-1.20.1.tgz"
+    sha256 = "54c0854bc86cc846dc11b19f8e7a8b2ebb47e6a32b53814e4b1eb50891fa3025"
+    url = "https://github.com/jw3126/ONNXRunTimeArtifacts/releases/download/v1.30.0-rc1/onnxruntime-win-x64-gpu_cuda12-1.30.0.tgz"
 [[onnxruntime_gpu]]
 arch = "x86_64"
-git-tree-sha1 = "478f998b8d737218ef0cc06d26e91288d1e72f3b"
+git-tree-sha1 = "5a59732dbcc12eb532e25e8559315ab77efd9a81"
 lazy = true
 libc = "glibc"
 os = "linux"
 
     [[onnxruntime_gpu.download]]
-    sha256 = "6bfb87c6ebe55367a94509b8ef062239e188dccf8d5caac8d6909b2344893bf0"
-    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-x64-gpu-1.20.1.tgz"
+    sha256 = "f9886932ee7bb0b4d3fcab736a392d4ff5efaa0672b47f19f0cec03437cf64f1"
+    url = "https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-linux-x64-gpu_cuda12-1.30.0.tgz"
