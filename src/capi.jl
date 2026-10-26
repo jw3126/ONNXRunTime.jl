@@ -875,10 +875,11 @@ end
     $TYPEDSIGNATURES
 
 """
-function GetTensorMutableData(api::OrtApi, tensor::OrtValue)::AbstractArray
+function GetTensorMutableData(api::OrtApi, tensor::OrtValue; reverse_dims::Bool=true)::AbstractArray
     GC.@preserve tensor begin
         data_owned_by_tensor::PermutedDimsArray = unsafe_GetTensorMutableData(api, tensor)
-        reversedims_lazy(copy(parent(data_owned_by_tensor)))
+        arr = copy(parent(data_owned_by_tensor))
+        reverse_dims ? reversedims_lazy(arr) : arr
     end
 end
 
