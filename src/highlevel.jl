@@ -2,14 +2,13 @@ using ArgCheck
 using LazyArtifacts
 using OrderedCollections: OrderedDict
 using DocStringExtensions
-import CEnum
+using CEnum: CEnum
 ################################################################################
 ##### testdatapath
 ################################################################################
 function testdatapath(args...)
-    joinpath(@__DIR__, "..", "test", "data", args...)
+    return joinpath(@__DIR__, "..", "test", "data", args...)
 end
-
 
 using .CAPI
 using .CAPI: juliatype, EXECUTION_PROVIDERS
@@ -38,27 +37,33 @@ struct InferenceSession
     reverse_dims::Bool
 end
 function Base.show(io::IO, o::InferenceSession)
-    print(io,
-"""InferenceSession
-    input_names:        $(input_names(o))
-    output_names:       $(output_names(o))
-    execution_provider: $(repr(o.execution_provider))
-""")
+    return print(
+        io,
+        """InferenceSession
+            input_names:        $(input_names(o))
+            output_names:       $(output_names(o))
+            execution_provider: $(repr(o.execution_provider))
+        """,
+    )
 end
 
 input_names(o::InferenceSession) = o.input_names
 output_names(o::InferenceSession) = o.output_names
 
-function input_names(api::OrtApi, session::OrtSession, allocator::OrtAllocator)::Vector{String}
+function input_names(
+    api::OrtApi, session::OrtSession, allocator::OrtAllocator
+)::Vector{String}
     n = SessionGetInputCount(api, session)
-    map(0:n-1) do i
-        SessionGetInputName(api, session, Csize_t(i), allocator)
+    map(0:(n - 1)) do i
+        return SessionGetInputName(api, session, Csize_t(i), allocator)
     end
 end
-function output_names(api::OrtApi, session::OrtSession, allocator::OrtAllocator)::Vector{String}
+function output_names(
+    api::OrtApi, session::OrtSession, allocator::OrtAllocator
+)::Vector{String}
     n = SessionGetOutputCount(api, session)
-    map(0:n-1) do i
-        SessionGetOutputName(api, session, Csize_t(i), allocator)
+    map(0:(n - 1)) do i
+        return SessionGetOutputName(api, session, Csize_t(i), allocator)
     end
 end
 
@@ -68,9 +73,11 @@ function parse_logging_level(level::Symbol)
     level == :info && return CAPI.ORT_LOGGING_LEVEL_INFO
     level == :error && return CAPI.ORT_LOGGING_LEVEL_ERROR
     level == :fatal && return CAPI.ORT_LOGGING_LEVEL_FATAL
-    error("""
-    $(level) is not a valid value for logging_level. The options are :verbose, :info, :warning (default), :error, and :fatal.
-    """)
+    return error(
+        """
+  $(level) is not a valid value for logging_level. The options are :verbose, :info, :warning (default), :error, and :fatal.
+  """,
+    )
 end
 
 """
@@ -95,14 +102,16 @@ Note: Due to limitations of the C API `CreateEnv` function, `envname`
 and `logging_level` can only be set once per process. Attempts to
 change these are ignored.
 """
-function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
-        envname::AbstractString="defaultenv",
-        logging_level::Symbol=:warning,
-        provider_options::NamedTuple=(;),
-        reverse_dims::Bool=true,
-    )::InferenceSession
-    api = GetApi(;execution_provider)
-    env = CreateEnv(api, name=envname, logging_level=parse_logging_level(logging_level))
+function load_inference(
+    path::AbstractString;
+    execution_provider::Symbol=:cpu,
+    envname::AbstractString="defaultenv",
+    logging_level::Symbol=:warning,
+    provider_options::NamedTuple=(;),
+    reverse_dims::Bool=true,
+)::InferenceSession
+    api = GetApi(; execution_provider)
+    env = CreateEnv(api; name=envname, logging_level=parse_logging_level(logging_level))
     if execution_provider === :cpu
         if !isempty(provider_options)
             error("""
@@ -112,22 +121,32 @@ function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
         session_options = CreateSessionOptions(api)
     elseif execution_provider === :cuda
         if !cuda_is_loaded[]
-            error("""
-            The $(repr(execution_provider)) execution provider requires the CUDA.jl and cuDNN.jl packages to be available. Try adding `import CUDA, cuDNN` to your code.
-            """)
+            error(
+                """
+          The $(repr(execution_provider)) execution provider requires the CUDA.jl and cuDNN.jl packages to be available. Try adding `import CUDA, cuDNN` to your code.
+          """,
+            )
         elseif !cuda_is_functional[]
-            error("""
-            The $(repr(execution_provider)) execution provider requires CUDA to be functional. See `CUDA.functional`.
-            """)
+            error(
+                """
+          The $(repr(execution_provider)) execution provider requires CUDA to be functional. See `CUDA.functional`.
+          """,
+            )
         else
-            if !(cuda_runtime_supported_version <= cuda_runtime_version[] < cuda_runtime_upper_bound)
-                error("""
-                Found CUDA runtime version $(cuda_runtime_version[]). The $(repr(execution_provider)) execution provider requires a CUDA runtime version of at least $(cuda_runtime_supported_version) but less than $(cuda_runtime_upper_bound). See `CUDA.set_runtime_version!` and the package README.
-                """)
+            if !(
+                cuda_runtime_supported_version <=
+                cuda_runtime_version[] <
+                cuda_runtime_upper_bound
+            )
+                error(
+                    """
+              Found CUDA runtime version $(cuda_runtime_version[]). The $(repr(execution_provider)) execution provider requires a CUDA runtime version of at least $(cuda_runtime_supported_version) but less than $(cuda_runtime_upper_bound). See `CUDA.set_runtime_version!` and the package README.
+              """,
+                )
             end
         end
         session_options = CreateSessionOptions(api)
-        cuda_options_dict = Dict{Symbol, Any}(pairs(provider_options))
+        cuda_options_dict = Dict{Symbol,Any}(pairs(provider_options))
         if haskey(cuda_options_dict, :cudnn_conv_algo_search)
             # Look up enum values.
             value = cuda_options_dict[:cudnn_conv_algo_search]
@@ -146,13 +165,20 @@ function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
     session = CreateSession(api, env, path, session_options)
     meminfo = CreateCpuMemoryInfo(api)
     allocator = CreateAllocator(api, session, meminfo)
-    _input_names =input_names(api, session, allocator)
+    _input_names = input_names(api, session, allocator)
     _output_names=output_names(api, session, allocator)
     # TODO Is aliasing supported by ONNX? It will cause bugs, so lets forbid it.
     @check allunique(_input_names)
     @check allunique(_output_names)
-    return InferenceSession(api, execution_provider, session, meminfo, allocator,
-        _input_names, _output_names, reverse_dims
+    return InferenceSession(
+        api,
+        execution_provider,
+        session,
+        meminfo,
+        allocator,
+        _input_names,
+        _output_names,
+        reverse_dims,
     )
 end
 
@@ -172,7 +198,7 @@ end
 function prepare_inputs(o::InferenceSession, inputs)
     names = input_names(o)
     tens = OrtValue[make_input_tensor(o, inputs, key) for key in names]
-    names, tens
+    return names, tens
 end
 
 keytype(o) = Base.keytype(o)
@@ -184,16 +210,21 @@ function make_output(o::InferenceSession, inputs::NamedTuple, output_names, outp
     # we can probably optimize this
     # use unsafe_GetTensorMutableData and afterwards set `val.isalive = false` and
     # `empty!(gchandles)`
-    pairs = (Symbol(key) => GetTensorMutableData(o.api, val; reverse_dims=o.reverse_dims) for (key, val) in zip(output_names, output_tensors))
-    (; pairs...)
+    pairs = (
+        Symbol(key) => GetTensorMutableData(o.api, val; reverse_dims=o.reverse_dims) for
+        (key, val) in zip(output_names, output_tensors)
+    )
+    return (; pairs...)
 end
-function make_output(o::InferenceSession, inputs::AbstractDict, output_names, output_tensors)
+function make_output(
+    o::InferenceSession, inputs::AbstractDict, output_names, output_tensors
+)
     @argcheck length(output_names) == length(output_tensors)
     ret = OrderedDict{keytype(inputs),AbstractArray}()
     for (key, val) in zip(output_names, output_tensors)
         ret[key] = GetTensorMutableData(o.api, val; reverse_dims=o.reverse_dims)
     end
-    ret
+    return ret
 end
 
 """
@@ -203,17 +234,14 @@ Run an [`InferenceSession`](@ref) on a collection of inputs. Here `inputs` can e
 be a `NamedTuple` or an `AbstractDict`. Optionally `output_names` can be passed.
 In this case only the outputs whose names are contained in `output_names` are computed.
 """
-function (o::InferenceSession)(
-                               inputs,
-                               output_names=nothing
-                              )
+function (o::InferenceSession)(inputs, output_names=nothing)
     isalive(o) || error("Session has been released and can no longer be called.")
     if output_names === nothing
         output_names = @__MODULE__().output_names(o)
     end
     @argcheck o.execution_provider in EXECUTION_PROVIDERS
-    @argcheck eltype(output_names) <: Union{AbstractString, Symbol}
-    @argcheck keytype(inputs) <: Union{AbstractString, Symbol}
+    @argcheck eltype(output_names) <: Union{AbstractString,Symbol}
+    @argcheck keytype(inputs) <: Union{AbstractString,Symbol}
     expected_input_names = ONNXRunTime.input_names(o)
     for key in keys(inputs)
         if !(String(key) in expected_input_names)
@@ -237,9 +265,11 @@ function (o::InferenceSession)(
         end
     end
     inp_names, input_tensors = prepare_inputs(o, inputs)
-    run_options    = nothing
-    output_tensors = Run(o.api, o.session, run_options, inp_names, input_tensors, output_names)
-    make_output(o, inputs, output_names, output_tensors)
+    run_options = nothing
+    output_tensors = Run(
+        o.api, o.session, run_options, inp_names, input_tensors, output_names
+    )
+    return make_output(o, inputs, output_names, output_tensors)
 end
 
 """
@@ -259,7 +289,7 @@ Using the inference session after releasing is an error.
 function release(o::InferenceSession)
     CAPI.release(o.api, o.session)
     CAPI.release(o.api, o.meminfo)
-    CAPI.release(o.api, o.allocator)
+    return CAPI.release(o.api, o.allocator)
 end
 
 isalive(o::InferenceSession) = all(CAPI.isalive, (o.session, o.meminfo, o.allocator))
