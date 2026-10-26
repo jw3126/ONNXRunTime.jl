@@ -40,7 +40,8 @@ function set_lib!(path::AbstractString, execution_provider::Symbol)
     if LIB[] != C_NULL
         dlclose(LIB[])
     end
-    return LIB[] = dlopen(path)
+    LIB[] = dlopen(path)
+    return nothing
 end
 
 function make_lib!(execution_provider)
@@ -74,7 +75,8 @@ function make_lib!(execution_provider)
     end
     path = joinpath(dir, "lib", libname)
     @check isfile(path)
-    return set_lib!(path, execution_provider)
+    set_lib!(path, execution_provider)
+    return nothing
 end
 
 function libref(execution_provider::Symbol)::Ref

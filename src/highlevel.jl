@@ -282,7 +282,8 @@ Using the inference session after releasing is an error.
 function release(o::InferenceSession)
     CAPI.release(o.api, o.session)
     CAPI.release(o.api, o.meminfo)
-    return CAPI.release(o.api, o.allocator)
+    CAPI.release(o.api, o.allocator)
+    return nothing
 end
 
 isalive(o::InferenceSession) = all(CAPI.isalive, (o.session, o.meminfo, o.allocator))

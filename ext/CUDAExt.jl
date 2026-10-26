@@ -9,7 +9,8 @@ using CUDA: CUDA
 function __init__()
     ONNXRunTime.cuda_is_loaded[] = true
     ONNXRunTime.cuda_is_functional[] = CUDA.functional()
-    return ONNXRunTime.cuda_runtime_version[] = CUDA.runtime_version()
+    ONNXRunTime.cuda_runtime_version[] = CUDA.runtime_version()
+    return nothing
 end
 
 end
