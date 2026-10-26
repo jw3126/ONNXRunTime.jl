@@ -35,6 +35,7 @@ struct InferenceSession
     allocator::OrtAllocator
     input_names::Vector{String}
     output_names::Vector{String}
+    reverse_dims::Bool
 end
 function Base.show(io::IO, o::InferenceSession)
     print(io,
@@ -85,6 +86,10 @@ Load an ONNX file at `path` into an inference session.
   `:info`, `:warning` (default), `:error`, and `:fatal`.
 * `provider_options`: Named tuple with options passed to the execution
   provider.
+* `reverse_dims`: When `true` (default), permutes the dimensions of inputs and
+  outputs such that the leftmost dimension in Julia corresponds to the leftmost dimension
+  in ONNX. When `false`, tensor data is unmodified such that the leftmost/fastest-changing
+  dimension in Julia corresponds to the rightmost/fastest-changing dimensions in ONNX.
 
 Note: Due to limitations of the C API `CreateEnv` function, `envname`
 and `logging_level` can only be set once per process. Attempts to
@@ -93,7 +98,8 @@ change these are ignored.
 function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
         envname::AbstractString="defaultenv",
         logging_level::Symbol=:warning,
-        provider_options::NamedTuple=(;)
+        provider_options::NamedTuple=(;),
+        reverse_dims::Bool=true,
     )::InferenceSession
     api = GetApi(;execution_provider)
     env = CreateEnv(api, name=envname, logging_level=parse_logging_level(logging_level))
@@ -146,15 +152,21 @@ function load_inference(path::AbstractString; execution_provider::Symbol=:cpu,
     @check allunique(_input_names)
     @check allunique(_output_names)
     return InferenceSession(api, execution_provider, session, meminfo, allocator,
-                            _input_names,
-                            _output_names,
-                           )
+        _input_names, _output_names, reverse_dims
+    )
 end
 
 function make_input_tensor(o::InferenceSession, inputs, key)
     arr = inputs[keytype(inputs)(key)]
-    cstorage = vec(reversedims(arr)::Array)
-    CreateTensorWithDataAsOrtValue(o.api, o.meminfo, cstorage, size(arr))
+    if o.reverse_dims
+        cstorage = vec(reversedims(arr)::Array)
+        csize = size(arr)
+    else
+        cstorage = vec(convert(Array, arr))
+        csize = reverse(size(arr))
+    end
+
+    return CreateTensorWithDataAsOrtValue(o.api, o.meminfo, cstorage, csize)
 end
 
 function prepare_inputs(o::InferenceSession, inputs)
@@ -166,20 +178,20 @@ end
 keytype(o) = Base.keytype(o)
 keytype(o::NamedTuple) = Symbol
 
-function make_output(o, inputs::NamedTuple, output_names, output_tensors)
+function make_output(o::InferenceSession, inputs::NamedTuple, output_names, output_tensors)
     @argcheck length(output_names) == length(output_tensors)
     # TODO
     # we can probably optimize this
     # use unsafe_GetTensorMutableData and afterwards set `val.isalive = false` and
     # `empty!(gchandles)`
-    pairs = (Symbol(key) => GetTensorMutableData(o.api, val) for (key, val) in zip(output_names, output_tensors))
-    (;pairs...)
+    pairs = (Symbol(key) => GetTensorMutableData(o.api, val; reverse_dims=o.reverse_dims) for (key, val) in zip(output_names, output_tensors))
+    (; pairs...)
 end
-function make_output(o, inputs::AbstractDict, output_names, output_tensors)
+function make_output(o::InferenceSession, inputs::AbstractDict, output_names, output_tensors)
     @argcheck length(output_names) == length(output_tensors)
-    ret = OrderedDict{keytype(inputs), AbstractArray}()
+    ret = OrderedDict{keytype(inputs),AbstractArray}()
     for (key, val) in zip(output_names, output_tensors)
-        ret[key] = GetTensorMutableData(o.api, val)
+        ret[key] = GetTensorMutableData(o.api, val; reverse_dims=o.reverse_dims)
     end
     ret
 end

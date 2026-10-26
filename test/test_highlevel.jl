@@ -39,6 +39,32 @@ using ONNXRunTime: juliatype
         @test d isa AbstractDict
         @test d == Dict("sum" => x+y)
     end
+    @testset "Reverse dims" begin
+        path = ORT.testdatapath("adder1x2x3.onnx")
+        model = ORT.load_inference(path; reverse_dims=false)
+        @test ORT.input_names(model) == ["x", "y"]
+        @test ORT.output_names(model) == ["sum"]
+        x = reshape(1.0f0:6.0f0, 3, 2, 1)
+        y = randn(Float32, 3, 2, 1)
+        xysum = x + y
+        d = model(Dict("x" => x, "y"=>y))
+        @test d isa AbstractDict
+        @test size(d["sum"]) == size(xysum)
+        @test d == Dict("sum" => x+y)
+
+        path = ORT.testdatapath("matmul.onnx")
+        model = ORT.load_inference(path; reverse_dims=false)
+        inputs = (
+            input1=randn(Float32, 3, 2),
+            input2=randn(Float32, 4, 3),
+        )
+        out = model(inputs).output
+        @test out isa Array # Ensure nested PermutedDimsArray are undone.
+        @test out ≈ inputs.input2 * inputs.input1 # == (inputs.input1' * inputs.input2')'
+        # Due to ordering difference between ONNX and Julia, rows and columns gets
+        # transposed on inputs and outputs. This is equivalent to switching the order of the
+        # operands.
+    end
     @testset "diagonal1x2x3x4.onnx" begin
         path = ORT.testdatapath("diagonal1x2x3x4.onnx")
         model = ORT.load_inference(path)
