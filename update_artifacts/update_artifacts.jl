@@ -20,9 +20,9 @@ using p7zip_jll: p7zip
 # The version to update to, unless one is passed on the command line.
 const DEFAULT_VERSION = v"1.30.0"
 
-# Repository the repacked tarballs are released to. Upstream ships the
-# Windows builds as zip files, but Artifacts.jl only understands tarballs,
-# so those have to be repacked and rehosted by us.
+# Repository the repacked tarballs are released to. Upstream ships the Windows builds as zip
+# files, but Artifacts.jl only understands tarballs, so those have to be repacked and
+# rehosted by us.
 const ARTIFACTS_REPO = "jw3126/ONNXRunTimeArtifacts"
 
 const PKG_ROOT = dirname(@__DIR__)
@@ -31,9 +31,9 @@ const WORKDIR = joinpath(@__DIR__, "build")
 """
     artifact_items(version)
 
-The full artifact matrix: one entry per (artifact, platform) pair that ends up
-in `Artifacts.toml`. `download_name` is the asset name in the upstream
-onnxruntime release; `.zip` entries are repacked and rehosted by us.
+The full artifact matrix: one entry per (artifact, platform) pair that ends up in
+`Artifacts.toml`. `download_name` is the asset name in the upstream onnxruntime release;
+`.zip` entries are repacked and rehosted by us.
 """
 function artifact_items(version)
     # Upstream dropped x86_64 macOS builds in 1.24.
@@ -106,10 +106,10 @@ end
 """
     repack(item, version, workdir)
 
-Download the upstream zip of `item` and repack it as a `.tgz`, preserving the
-single top level directory that `src/capi.jl` relies on. All files are made
-executable because Windows `dlopen` refuses to load a dll otherwise, see
-https://github.com/JuliaLang/julia/issues/38993
+Download the upstream zip of `item` and repack it as a `.tgz`, preserving the single top
+level directory that `src/capi.jl` relies on. All files are made executable because Windows
+`dlopen` refuses to load a dll otherwise, see
+https://github.com/JuliaLang/julia/issues/38993.
 """
 function repack(item, version, workdir)
     tarball = joinpath(workdir, repacked_name(item))
@@ -158,8 +158,7 @@ end
 """
     release_assets(tag)
 
-Names of the assets attached to release `tag`, or `nothing` if there is no such
-release yet.
+Names of the assets attached to release `tag`, or `nothing` if there is no such release yet.
 """
 function release_assets(tag)
     jq = ".assets[].name"
@@ -174,8 +173,8 @@ function publish_release(version, tarballs; exists::Bool, force::Bool=false)
     if !exists
         isempty(tarballs) && return nothing
         notes =
-            "Windows builds of onnxruntime $version, repacked from the upstream " *
-            "zip files as tarballs for Artifacts.jl."
+            "Windows builds of onnxruntime $version, repacked from the upstream zip " *
+            "files as tarballs for Artifacts.jl."
         @info "Creating release" tag assets = basename.(tarballs)
         run(
             `gh release create $tag --repo $ARTIFACTS_REPO --title $tag --notes $notes $tarballs`,
@@ -193,8 +192,8 @@ end
 """
     wait_for_url(url; timeout, interval)
 
-GitHub needs a moment before a freshly uploaded asset is downloadable. Poll
-until it is, so that the `Artifacts.toml` step does not race the upload.
+GitHub needs a moment before a freshly uploaded asset is downloadable. Poll until it is, so
+that the `Artifacts.toml` step does not race the upload.
 """
 function wait_for_url(url; timeout=300, interval=5)
     deadline = time() + timeout
@@ -216,9 +215,9 @@ end
 """
     write_artifacts_toml(version, dest)
 
-Build `Artifacts.toml` from scratch in a temporary directory and move it into
-place. Building from scratch means platforms that were dropped from
-`artifact_items` do not linger as stale entries.
+Build `Artifacts.toml` from scratch in a temporary directory and move it into place.
+Building from scratch means platforms that were dropped from `artifact_items` do not linger
+as stale entries.
 """
 function write_artifacts_toml(version, dest)
     tmp = joinpath(mktempdir(), "Artifacts.toml")

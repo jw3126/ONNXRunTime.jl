@@ -1,12 +1,12 @@
 """
-module CAPI
+    module CAPI
 
 This module closely follows the offical onnxruntime [C-API](https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347).
 See [here](https://github.com/microsoft/onnxruntime-inference-examples/blob/d031f879c9a8d33c8b7dc52c5bc65fe8b9e3960d/c_cxx/fns_candy_style_transfer/fns_candy_style_transfer.c) for a C code example.
 """
 module CAPI
-using ONNXRunTime: reversedims_lazy
 
+using ONNXRunTime: reversedims_lazy
 using DocStringExtensions
 using Libdl
 using CEnum: @cenum
@@ -55,11 +55,10 @@ function make_lib!(execution_provider)
     artifacts_toml = find_artifacts_toml(joinpath(@__DIR__, "ONNXRunTime.jl"))
     h = artifact_hash(artifact_name, artifacts_toml)
     if h === nothing
-        msg = """
-        Unsupported execution_provider = $(repr(execution_provider)) for
-        this architectur.
-        """
-        error(msg)
+        error(
+            "Unsupported execution_provider = $(repr(execution_provider)) for this " *
+            "architectur.",
+        )
     end
     ensure_artifact_installed(artifact_name, artifacts_toml)
     root = artifact_path(h)
@@ -399,11 +398,12 @@ end
 """
     release(api::OrtApi, obj)::Nothing
 
-Release memory owned by `obj`. The garbage collector should call this
-function automatically. If it does not that's a bug that should be reported.
+Release memory owned by `obj`. The garbage collector should call this function
+automatically. If it does not that's a bug that should be reported.
 
 There might however be situations with high memory pressure. In these situations it might
-help to call this function manually to release memory earlier. Using an object after releasing it is undefined behaviour.
+help to call this function manually to release memory earlier. Using an object after
+releasing it is undefined behaviour.
 """
 function release end
 
@@ -1052,4 +1052,4 @@ end
 
 export OrtException
 
-end#module
+end

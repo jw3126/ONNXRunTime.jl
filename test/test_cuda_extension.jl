@@ -1,10 +1,9 @@
 # This file is neither included from `runtests.jl` nor run in CI.
 #
-# Run it with `julia test/test_cuda_extension.jl`. This requires that
-# Julia is installed with juliaup and will involve downloading of a
-# lot of big artifacts and a couple of julia versions. The output will
-# contain lots of error messages from caught errors; what matters is
-# that all testsets pass.
+# Run it with `julia test/test_cuda_extension.jl`. This requires that Julia is installed
+# with juliaup and will involve downloading of a lot of big artifacts and a couple of
+# julia versions. The output will contain lots of error messages from caught errors; what
+# matters is that all testsets pass.
 
 using Test
 

@@ -14,8 +14,8 @@ using ONNXRunTime: juliatype
         @test ORT.input_names(model) === model.input_names
         @test ORT.output_names(model) === model.output_names
         input = randn(Float32, 2, 3)
-        #= this works             =#
-        model(Dict("input" => randn(Float32, 2, 3)), ["output"])
+
+        model(Dict("input" => randn(Float32, 2, 3)), ["output"]) # Should not throw.
         @test_throws ORT.ArgumentError model(Dict("nonsense" => input), ["output"])
         @test_throws ORT.ArgumentError model(Dict("input" => input), ["nonsense"])
         @test_throws ORT.OrtException model(Dict("input" => input), String[])
@@ -205,4 +205,4 @@ using ONNXRunTime: juliatype
     end
 end
 
-end#module
+end

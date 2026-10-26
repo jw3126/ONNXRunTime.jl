@@ -3,6 +3,7 @@ using LazyArtifacts
 using OrderedCollections: OrderedDict
 using DocStringExtensions
 using CEnum: CEnum
+
 ################################################################################
 ##### testdatapath
 ################################################################################
@@ -74,9 +75,8 @@ function parse_logging_level(level::Symbol)
     level == :error && return CAPI.ORT_LOGGING_LEVEL_ERROR
     level == :fatal && return CAPI.ORT_LOGGING_LEVEL_FATAL
     return error(
-        """
-  $(level) is not a valid value for logging_level. The options are :verbose, :info, :warning (default), :error, and :fatal.
-  """,
+        "$(level) is not a valid value for logging_level. The options are :verbose, " *
+        ":info, :warning (default), :error, and :fatal.",
     )
 end
 
@@ -86,21 +86,19 @@ end
 Load an ONNX file at `path` into an inference session.
 
 *Keyword arguments:*
-* `execution_provider`: Either `:cpu` or `:cuda`. The latter requires a
-  CUDA capable GPU and the `CUDA` and `cuDNN` packages must first be imported.
+* `execution_provider`: Either `:cpu` or `:cuda`. The latter requires a CUDA capable GPU and
+  the `CUDA` and `cuDNN` packages must first be imported.
 * `envname`: Name used for logging purposes.
-* `logging_level`: Level of diagnostic output. Options are `:verbose`,
-  `:info`, `:warning` (default), `:error`, and `:fatal`.
-* `provider_options`: Named tuple with options passed to the execution
-  provider.
-* `reverse_dims`: When `true` (default), permutes the dimensions of inputs and
-  outputs such that the leftmost dimension in Julia corresponds to the leftmost dimension
-  in ONNX. When `false`, tensor data is unmodified such that the leftmost/fastest-changing
-  dimension in Julia corresponds to the rightmost/fastest-changing dimensions in ONNX.
+* `logging_level`: Level of diagnostic output. Options are `:verbose`, `:info`, `:warning`
+  (default), `:error`, and `:fatal`.
+* `provider_options`: Named tuple with options passed to the execution provider.
+* `reverse_dims`: When `true` (default), permutes the dimensions of inputs and outputs such
+  that the leftmost dimension in Julia corresponds to the leftmost dimension in ONNX. When
+  `false`, tensor data is unmodified such that the leftmost/fastest-changing dimension in
+  Julia corresponds to the rightmost/fastest-changing dimensions in ONNX.
 
-Note: Due to limitations of the C API `CreateEnv` function, `envname`
-and `logging_level` can only be set once per process. Attempts to
-change these are ignored.
+Note: Due to limitations of the C API `CreateEnv` function, `envname` and `logging_level`
+can only be set once per process. Attempts to change these are ignored.
 """
 function load_inference(
     path::AbstractString;
@@ -114,36 +112,35 @@ function load_inference(
     env = CreateEnv(api; name=envname, logging_level=parse_logging_level(logging_level))
     if execution_provider === :cpu
         if !isempty(provider_options)
-            error("""
-            No provider options are supported for the CPU execution provider.
-            """)
+            error("No provider options are supported for the CPU execution provider.")
         end
         session_options = CreateSessionOptions(api)
     elseif execution_provider === :cuda
         if !cuda_is_loaded[]
             error(
-                """
-          The $(repr(execution_provider)) execution provider requires the CUDA.jl and cuDNN.jl packages to be available. Try adding `import CUDA, cuDNN` to your code.
-          """,
+                "The $(repr(execution_provider)) execution provider requires the CUDA.jl " *
+                "and cuDNN.jl packages to be available. Try adding `import CUDA, cuDNN` " *
+                "to your code.",
             )
-        elseif !cuda_is_functional[]
+        end
+        if !cuda_is_functional[]
             error(
-                """
-          The $(repr(execution_provider)) execution provider requires CUDA to be functional. See `CUDA.functional`.
-          """,
+                "The $(repr(execution_provider)) execution provider requires CUDA to be " *
+                "functional. See `CUDA.functional`.",
             )
-        else
-            if !(
-                cuda_runtime_supported_version <=
-                cuda_runtime_version[] <
-                cuda_runtime_upper_bound
+        end
+        if !(
+            cuda_runtime_supported_version <=
+            cuda_runtime_version[] <
+            cuda_runtime_upper_bound
+        )
+            error(
+                "Found CUDA runtime version $(cuda_runtime_version[]). The " *
+                "$(repr(execution_provider)) execution provider requires a CUDA runtime " *
+                "version of at least $(cuda_runtime_supported_version) but less than " *
+                "$(cuda_runtime_upper_bound). See `CUDA.set_runtime_version!` and the " *
+                "package README.",
             )
-                error(
-                    """
-              Found CUDA runtime version $(cuda_runtime_version[]). The $(repr(execution_provider)) execution provider requires a CUDA runtime version of at least $(cuda_runtime_supported_version) but less than $(cuda_runtime_upper_bound). See `CUDA.set_runtime_version!` and the package README.
-              """,
-                )
-            end
         end
         session_options = CreateSessionOptions(api)
         cuda_options_dict = Dict{Symbol,Any}(pairs(provider_options))
@@ -151,9 +148,7 @@ function load_inference(
             # Look up enum values.
             value = cuda_options_dict[:cudnn_conv_algo_search]
             if value ∉ first.(CEnum.name_value_pairs(CAPI.OrtCudnnConvAlgoSearch))
-                error("""
-                $(value) is not a valid value for :cudnn_conv_algo_search.
-                """)
+                error("$(value) is not a valid value for :cudnn_conv_algo_search.")
             end
             cuda_options_dict[:cudnn_conv_algo_search] = getfield(CAPI, value)
         end
@@ -166,7 +161,7 @@ function load_inference(
     meminfo = CreateCpuMemoryInfo(api)
     allocator = CreateAllocator(api, session, meminfo)
     _input_names = input_names(api, session, allocator)
-    _output_names=output_names(api, session, allocator)
+    _output_names = output_names(api, session, allocator)
     # TODO Is aliasing supported by ONNX? It will cause bugs, so lets forbid it.
     @check allunique(_input_names)
     @check allunique(_output_names)
@@ -230,9 +225,9 @@ end
 """
     (o::InferenceSession)(inputs [,output_names])
 
-Run an [`InferenceSession`](@ref) on a collection of inputs. Here `inputs` can either
-be a `NamedTuple` or an `AbstractDict`. Optionally `output_names` can be passed.
-In this case only the outputs whose names are contained in `output_names` are computed.
+Run an [`InferenceSession`](@ref) on a collection of inputs. Here `inputs` can either be a
+`NamedTuple` or an `AbstractDict`. Optionally `output_names` can be passed. In this case
+only the outputs whose names are contained in `output_names` are computed.
 """
 function (o::InferenceSession)(inputs, output_names=nothing)
     isalive(o) || error("Session has been released and can no longer be called.")
@@ -275,14 +270,12 @@ end
 """
     release(o::InferenceSession)::Nothing
 
-Release memory allocated to an [`InferenceSession`](@ref). This also
-happens automatically when the object has gone out of scope and the
-garbage collector deletes it.
+Release memory allocated to an [`InferenceSession`](@ref). This also happens automatically
+when the object has gone out of scope and the garbage collector deletes it.
 
-However, there is no guarantee when that happens, so it can be useful
-to manually release the memory. This is especially true when the model
-has allocated GPU memory, which does not put pressure on the garbage
-collector to run promptly.
+However, there is no guarantee when that happens, so it can be useful to manually release
+the memory. This is especially true when the model has allocated GPU memory, which does not
+put pressure on the garbage collector to run promptly.
 
 Using the inference session after releasing is an error.
 """

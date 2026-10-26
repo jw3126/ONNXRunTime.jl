@@ -1,4 +1,5 @@
 module TestCUDA
+
 using CUDA: CUDA
 using cuDNN: cuDNN
 using Test
@@ -6,8 +7,8 @@ using ONNXRunTime
 const ORT = ONNXRunTime
 using ONNXRunTime: SessionOptionsAppendExecutionProvider_CUDA
 
-#using Libdl
-#Libdl.dlopen("/home/jan/.julia/artifacts/e2fd6cdf04b830a1d802fb35a6193788d0a3811a/lib/libcudart.so.11.0")
+# using Libdl
+# Libdl.dlopen("/home/jan/.julia/artifacts/e2fd6cdf04b830a1d802fb35a6193788d0a3811a/lib/libcudart.so.11.0")
 
 @testset "CUDA high level" begin
     @testset "increment2x3.onnx" begin
@@ -86,4 +87,5 @@ using ONNXRunTime.CAPI
     @test size(output_array) == (2, 3)
     @test output_array ≈ 1 .+ input_array
 end
-end#module
+
+end
