@@ -4,6 +4,7 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://jw3126.github.io/ONNXRunTime.jl/dev)
 [![Build Status](https://github.com/jw3126/ONNXRunTime.jl/workflows/CI/badge.svg)](https://github.com/jw3126/ONNXRunTime.jl/actions)
 [![Coverage](https://codecov.io/gh/jw3126/ONNXRunTime.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jw3126/ONNXRunTime.jl)
+[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/JuliaDiff/BlueStyle)
 
 [ONNXRunTime](https://github.com/jw3126/ONNXRunTime.jl) provides inofficial [julia](https://github.com/JuliaLang/julia) bindings for [onnxruntime](https://github.com/microsoft/onnxruntime).
 It exposes both a low level interface, that mirrors the official [C-API](https://github.com/microsoft/onnxruntime/blob/v1.8.1/include/onnxruntime/core/session/onnxruntime_c_api.h#L347), as well as an high level interface.
