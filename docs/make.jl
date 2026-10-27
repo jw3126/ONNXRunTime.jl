@@ -3,7 +3,7 @@ using Documenter
 
 DocMeta.setdocmeta!(ONNXRunTime, :DocTestSetup, :(using ONNXRunTime); recursive=true)
 
-cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"), force=true)
+cp(joinpath(@__DIR__, "..", "README.md"), joinpath(@__DIR__, "src", "index.md"); force=true)
 
 makedocs(;
     modules=[ONNXRunTime],
@@ -15,14 +15,7 @@ makedocs(;
         canonical="https://jw3126.github.io/ONNXRunTime.jl",
         assets=String[],
     ),
-    pages=[
-        "Home" => "index.md",
-        "API" => "api.md",
-        "Explanation" => "explanation.md",
-    ],
+    pages=["Home" => "index.md", "API" => "api.md", "Explanation" => "explanation.md"],
 )
 
-deploydocs(;
-    repo="github.com/jw3126/ONNXRunTime.jl",
-    devbranch = "main",
-)
+deploydocs(; repo="github.com/jw3126/ONNXRunTime.jl", devbranch="main")

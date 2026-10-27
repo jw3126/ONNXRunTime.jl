@@ -1,4 +1,5 @@
 module TestCAPI
+
 using Test
 using ONNXRunTime.CAPI
 import ONNXRunTime as ORT
@@ -10,7 +11,9 @@ import ONNXRunTime as ORT
         path = ORT.testdatapath("increment2x3.onnx")
         session_options = CreateSessionOptions(api)
         @test (sprint(show, session_options); true)
-        @test_throws Exception CreateSession(api, env, "does_not_exits.onnx", session_options)
+        @test_throws Exception CreateSession(
+            api, env, "does_not_exits.onnx", session_options
+        )
         session = CreateSession(api, env, path, session_options)
         @test (sprint(show, session); true)
         @test SessionGetInputCount(api, session) == 1
@@ -28,7 +31,7 @@ import ONNXRunTime as ORT
             input_vec[1] input_vec[2] input_vec[3];
             input_vec[4] input_vec[5] input_vec[6];
         ]
-        input_tensor = CreateTensorWithDataAsOrtValue(api, mem, input_vec, (2,3))
+        input_tensor = CreateTensorWithDataAsOrtValue(api, mem, input_vec, (2, 3))
         run_options = CreateRunOptions(api)
         input_names = ["input"]
         output_names = ["output"]
@@ -40,7 +43,7 @@ import ONNXRunTime as ORT
         @test output_tensor isa OrtValue
         output_array = GetTensorMutableData(api, output_tensor)
         @test typeof(output_array) <: AbstractMatrix{Float32}
-        @test size(output_array) == (2,3)
+        @test size(output_array) == (2, 3)
         @test output_array ≈ 1 .+ input_array
     end
     @testset "increment2x3 ModelMetadata" begin
@@ -49,14 +52,17 @@ import ONNXRunTime as ORT
         path = ORT.testdatapath("increment2x3.onnx")
         session_options = CreateSessionOptions(api)
         @test (sprint(show, session_options); true)
-        @test_throws Exception CreateSession(api, env, "does_not_exits.onnx", session_options)
+        @test_throws Exception CreateSession(
+            api, env, "does_not_exits.onnx", session_options
+        )
         session = CreateSession(api, env, path, session_options)
         model_metadata = SessionGetModelMetadata(api, session)
         @test model_metadata isa OrtModelMetadata
         mem = CreateCpuMemoryInfo(api)
         allocator = CreateAllocator(api, session, mem)
         @test CAPI.ModelMetadataGetProducerName(api, model_metadata, allocator) == "pytorch"
-        @test CAPI.ModelMetadataGetGraphName(api, model_metadata, allocator) == "torch-jit-export"
+        @test CAPI.ModelMetadataGetGraphName(api, model_metadata, allocator) ==
+            "torch-jit-export"
         @test CAPI.ModelMetadataGetDescription(api, model_metadata, allocator) == ""
         @test CAPI.ModelMetadataGetDomain(api, model_metadata, allocator) == ""
         @test CAPI.ModelMetadataGetGraphDescription(api, model_metadata, allocator) == ""
@@ -66,15 +72,17 @@ end
 @testset "tensor roundtrip" begin
     api = GetApi()
     mem = CreateCpuMemoryInfo(api)
-    data = randn(2,3)
-    tensor = CreateTensorWithDataAsOrtValue(api, mem, vec(ORT.reversedims(data)), size(data))
+    data = randn(2, 3)
+    tensor = CreateTensorWithDataAsOrtValue(
+        api, mem, vec(ORT.reversedims(data)), size(data)
+    )
     @test IsTensor(api, tensor)
     info = GetTensorTypeAndShape(api, tensor)
     onnxelty = GetTensorElementType(api, info)
     @test onnxelty isa ONNXTensorElementDataType
     @test ORT.juliatype(onnxelty) == eltype(data)
     @test GetDimensionsCount(api, info) == 2
-    @test GetDimensions(api, info) == [2,3]
+    @test GetDimensions(api, info) == [2, 3]
     data2 = GetTensorMutableData(api, tensor)
     @test length(data2) == length(data)
     @test size(data2) == size(data)

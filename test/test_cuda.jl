@@ -1,13 +1,14 @@
 module TestCUDA
-import CUDA
-import cuDNN
+
+using CUDA: CUDA
+using cuDNN: cuDNN
 using Test
 using ONNXRunTime
 const ORT = ONNXRunTime
 using ONNXRunTime: SessionOptionsAppendExecutionProvider_CUDA
 
-#using Libdl
-#Libdl.dlopen("/home/jan/.julia/artifacts/e2fd6cdf04b830a1d802fb35a6193788d0a3811a/lib/libcudart.so.11.0")
+# using Libdl
+# Libdl.dlopen("/home/jan/.julia/artifacts/e2fd6cdf04b830a1d802fb35a6193788d0a3811a/lib/libcudart.so.11.0")
 
 @testset "CUDA high level" begin
     @testset "increment2x3.onnx" begin
@@ -15,36 +16,38 @@ using ONNXRunTime: SessionOptionsAppendExecutionProvider_CUDA
         model = ORT.load_inference(path, execution_provider=:cuda)
         @test ORT.input_names(model) == ["input"]
         @test ORT.output_names(model) == ["output"]
-        input = randn(Float32, 2,3)
-        y = model((;input=input,), ["output"])
-        @test y == (output=input .+ 1f0,)
+        input = randn(Float32, 2, 3)
+        y = model((; input=input,), ["output"])
+        @test y == (output=input .+ 1.0f0,)
     end
 
     @testset "provider options" begin
         path = ORT.testdatapath("Conv1d2.onnx")
-        input = Array{Float32,3}(undef, (1,2,3))
-        input[1,1,1] = 1
-        input[1,1,2] = 2
-        input[1,1,3] = 3
-        input[1,2,1] = 4
-        input[1,2,2] = 5
-        input[1,2,3] = 6
-        inputs=(;input)
+        input = Array{Float32,3}(undef, (1, 2, 3))
+        input[1, 1, 1] = 1
+        input[1, 1, 2] = 2
+        input[1, 1, 3] = 3
+        input[1, 2, 1] = 4
+        input[1, 2, 2] = 5
+        input[1, 2, 3] = 6
+        inputs=(; input)
         for conv_search in (:DEFAULT, :HEURISTIC, :EXHAUSTIVE)
-            cuda_options = (;cudnn_conv_algo_search=conv_search)
-            model = ORT.load_inference(path, execution_provider=:cuda,
-                                       provider_options=cuda_options)
+            cuda_options = (; cudnn_conv_algo_search=conv_search)
+            model = ORT.load_inference(
+                path, execution_provider=:cuda, provider_options=cuda_options
+            )
             out = model(inputs).output
-            @test out[1,1,1] == 1
-            @test out[1,1,2] == 3
-            @test out[1,1,3] == 5
-            @test out[1,2,1] == 0
-            @test out[1,2,2] == 0
-            @test out[1,2,3] == 0
+            @test out[1, 1, 1] == 1
+            @test out[1, 1, 2] == 3
+            @test out[1, 1, 3] == 5
+            @test out[1, 2, 1] == 0
+            @test out[1, 2, 2] == 0
+            @test out[1, 2, 3] == 0
         end
-        cuda_options = (;cudnn_conv_algo_search=:NEVER_HEARD_OF_THIS)
-        @test_throws ErrorException ORT.load_inference(path, execution_provider=:cuda,
-                                                       provider_options=cuda_options)
+        cuda_options = (; cudnn_conv_algo_search=:NEVER_HEARD_OF_THIS)
+        @test_throws ErrorException ORT.load_inference(
+            path, execution_provider=:cuda, provider_options=cuda_options
+        )
     end
 end
 
@@ -70,7 +73,7 @@ using ONNXRunTime.CAPI
         input_vec[1] input_vec[2] input_vec[3];
         input_vec[4] input_vec[5] input_vec[6];
     ]
-    input_tensor = CreateTensorWithDataAsOrtValue(api, mem, input_vec, (2,3))
+    input_tensor = CreateTensorWithDataAsOrtValue(api, mem, input_vec, (2, 3))
     run_options = CreateRunOptions(api)
     input_names = ["input"]
     output_names = ["output"]
@@ -81,8 +84,8 @@ using ONNXRunTime.CAPI
     @test output_tensor isa OrtValue
     output_array = GetTensorMutableData(api, output_tensor)
     @test typeof(output_array) <: AbstractMatrix{Float32}
-    @test size(output_array) == (2,3)
+    @test size(output_array) == (2, 3)
     @test output_array ≈ 1 .+ input_array
 end
-end#module
 
+end
